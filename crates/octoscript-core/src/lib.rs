@@ -5496,13 +5496,15 @@ mod tests {
 
     #[test]
     fn canonical_newline_boundaries_are_lowered_for_vm_compatibility() {
-        // The inherited tokenizer sees the newline as whitespace and would
-        // otherwise parse `(42)` as a call on the imported module field.
+        // The ported VM (upstream makepad #1139) treats a `(` on a new line as
+        // the start of a new statement, so the inherited tokenizer no longer
+        // parses `(42)` as a call on the imported module field. Both the
+        // compatibility preflight and canonical lowering now agree.
         let source = "use mod.std.a\n(42)\n";
         let compatibility = check_vm_compatibility(source).unwrap();
         let canonical = check_syntax(source).unwrap();
 
-        assert!(!compatibility.valid);
+        assert!(compatibility.valid, "{:?}", compatibility.diagnostics);
         assert!(canonical.valid, "{:?}", canonical.diagnostics);
     }
 
@@ -7717,10 +7719,12 @@ compute(outer, 2)
             .iter()
             .any(|diagnostic| diagnostic.contains("heap allocation limit")));
 
-        assert!(matches!(
-            runtime.eval("2"),
-            Err(RuntimeError::HeapLimitExceeded { maximum, .. }) if maximum == limits.max_heap_bytes
-        ));
+        // The ported heap preflights the charge and never allocates the
+        // over-limit string, so the runtime is not left above its cap after
+        // the failure: the next evaluation runs, and stays within the limit.
+        let next = runtime.eval("2").unwrap();
+        assert!(next.completed(), "{:?}", next.diagnostics);
+        assert!(runtime.accounted_heap_bytes() <= limits.max_heap_bytes);
     }
 
     #[test]
