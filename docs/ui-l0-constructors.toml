@@ -26,6 +26,23 @@
 
 # ─── containers ───────────────────────────────────────────────────────────────
 
+# A registered theme-kit component. The host supplies its checked definition;
+# an instance names a source-linked placement, not a widget implementation.
+[Kit]
+component = { kind = "text" }
+instance = { kind = "text" }
+part = { kind = "text" }
+text = { kind = "text" }
+placeholder = { kind = "text" }
+enabled = { kind = "bool" }
+checked = { kind = "bool" }
+selected = { kind = "bool" }
+index = { kind = "number" }
+value = { kind = "number" }
+value2 = { kind = "number" }
+focused = { kind = "bool" }
+password = { kind = "bool" }
+
 [Surface]
 pad = { kind = "token", tokens = ["page", "tight", "none"] }
 
@@ -108,6 +125,7 @@ dock = { kind = "token", tokens = ["top", "bottom", "right"] }
 [Card]
 on_tap = { kind = "event" }
 value  = { kind = "any" }
+tint   = { kind = "token" }
 
 # `width` says which column absorbs the leftover space. A row of columns has to
 # divide the line somehow, and only the card knows which one should yield.
@@ -143,6 +161,33 @@ cols = { kind = "number" }
 
 [Rule]
 
+# A flexible blank: absorbs the leftover height of the column it sits in.
+# Before a bottom bar it pins the bar to the bottom; around a centered stack it
+# centers the stack vertically. Zero arguments — its whole meaning is "the
+# height that is left".
+[Space]
+
+# A full-bleed inverse section band — a month strip, a dark app-bar stripe.
+[Band]
+text = { kind = "text" }
+
+# One chat message; the side is who said it, the theme styles the parties.
+[Bubble]
+text = { kind = "text" }
+side = { kind = "token" }
+
+# The floating round action button, pinned over the page corner.
+[Fab]
+name = { kind = "token" }
+
+# The bottom tab bar and its tabs, pinned to the page floor.
+[TabBar]
+
+[Tab]
+icon   = { kind = "token" }
+label  = { kind = "text" }
+active = { kind = "token" }
+
 # ─── text roles ───────────────────────────────────────────────────────────────
 # Seven ROLES. A role says what a piece of text is FOR; the active theme decides
 # what it looks like (profile §1.1). `TextHero` is "the one number this card
@@ -177,6 +222,11 @@ tint   = { kind = "path" }
 text  = { kind = "text" }
 width = { kind = "width" }
 
+# The small tracked-caps line above a hero — "T O K Y O". The card supplies
+# the words; the caps and the tracking are the theme's.
+[TextEyebrow]
+text = { kind = "text" }
+
 [TextCaption]
 text   = { kind = "text" }
 value  = { kind = "data" }
@@ -196,6 +246,15 @@ label  = { kind = "text" }
 value  = { kind = "data" }
 unit   = { kind = "unit" }
 format = { kind = "format" }
+glyph  = { kind = "text" }
+shape  = { kind = "token" }
+
+[Icon]
+name = { kind = "token" }
+size = { kind = "token" }
+
+[Avatar]
+text = { kind = "text" }
 
 [Chip]
 text   = { kind = "text" }
@@ -273,7 +332,8 @@ span = { kind = "number" }
 # A list row's image: a fixed 16:9 tile. `Photo` fills its width (it is a
 # backdrop); a row needs a thumbnail beside its text.
 [Thumb]
-src = { kind = "path" }
+src   = { kind = "path" }
+shape = { kind = "token" }
 
 # One YouTube search result. `embed` is a player url ready for sys.link — a
 # card cannot build one, because L0 has no string concatenation.
@@ -347,8 +407,21 @@ tokens  = ["fill", "fit", "day", "rank", "temp", "label"]
 args = ["name"]
 answers = ["lat", "lon", "name", "country", "admin1", "timezone", "population"]
 
+# Live topic detail from Wikipedia's page-summary endpoint. Declared with the
+# subject only — `source d sys.wiki(query: "Dune")` — and read as `d.extract`,
+# `d.title`, the same shape as any other record source.
+[sources."sys.wiki"]
+args = ["query"]
+answers = ["title", "extract", "description"]
+
 [sources."sys.weather"]
-args = ["lat", "lon", "days", "fields", "aggregate"]
+# `day` selects which day the DAILY fields describe: 0 (default) is today,
+# 1 is tomorrow. The current-conditions fields (temp, feels, humidity, wind,
+# pressure) have no future form — there is no "current" tomorrow — so a card
+# that names day: 1 must read `hi`/`lo` instead of `temp`, and the lowering
+# refuses to translate a current field under a future day rather than serve
+# today's reading beneath a label that says otherwise.
+args = ["lat", "lon", "days", "fields", "aggregate", "day"]
 answers = ["temp", "feels", "hi", "lo", "cond", "humidity", "wind", "pressure", "uv", "visibility", "precip", "dayname", "days"]
 aggregates = ["min_lo", "max_hi"]
 
@@ -365,7 +438,17 @@ args = ["lat", "lon"]
 answers = ["phase", "illumination", "name"]
 
 [sources."sys.photo"]
-args = ["query"]
+# `query` is a SCENE, not a place. Asked for "Beijing" a generative image model
+# invents a city, and it invented one that reads as Taipei — a fabricated
+# depiction of a real place, rendering as a plausible photograph, with nothing on
+# screen saying it is synthetic. A card that names a place in its title must not
+# name it here.
+#
+# `cond` is what keeps the backdrop honest about the day: pass the forecast's
+# condition and the host folds it into the prompt, so a card reading 92 % rain
+# does not sit under a sunlit wallpaper. The SCENE is the card's words; the
+# WEATHER is the host's fact, and neither writes the other's half.
+args = ["query", "cond"]
 answers = []
 
 [sources."sys.locale"]
@@ -414,7 +497,7 @@ answers = ["duration", "distance", "steps"]
 # Progress here is measured: the position is projected onto the route, so an
 # instruction only advances because the device did.
 [sources."sys.step"]
-args = ["from_lat", "from_lon", "to_lat", "to_lon", "at_lat", "at_lon", "fields"]
+args = ["from_lat", "from_lon", "to_lat", "to_lon", "at_lat", "at_lon", "via", "fields"]
 answers = ["instruction", "remaining", "progress", "eta"]
 
 [sources."sys.places"]
@@ -424,6 +507,16 @@ answers = ["id", "name", "distance", "lat", "lon", "category"]
 [sources."sys.news"]
 args = ["count", "offset", "fields"]
 answers = ["id", "title", "author", "points", "comments", "url"]
+
+[sources."sys.quakes"]
+# The USGS M2.5+ feed of the last 24 hours, newest first. Row-shaped like
+# `sys.news`, and for the same reason: a feed is a list, and `offset` is what
+# lets a card show a lead event above the rest without repeating it.
+#
+# `id` is the row's index as a string. USGS ids are opaque and the card only
+# needs identity for a `key`, which is what a `for` requires.
+args = ["count", "offset", "fields"]
+answers = ["id", "mag", "place", "depth", "ago", "lat", "lon"]
 
 [sources."sys.news_item"]
 args = ["id", "fields"]
@@ -538,6 +631,12 @@ answers = ["ticker", "name", "exchange", "kind"]
 # produce that: L0 has no way to build a composite value, which is exactly the
 # point of it having no expression form. The language was right.
 [sources."sys.cities"]
-args = ["fields"]
-answers = ["name", "lat", "lon", "temp", "feels", "hi", "lo", "cond", "humidity", "wind"]
+args = ["fields", "unit"]
+answers = ["name", "lat", "lon", "temp", "feels", "feels_delta", "hi", "lo", "cond", "humidity", "wind"]
 writes = ["append", "remove"]
+
+# Pure conversion; supported pairs and coefficients are owned by the runtime.
+# direction is fwd (default) or rev. Unsupported pairs have no value.
+[sources."sys.convert"]
+args = ["amount", "from", "to", "direction", "fields"]
+answers = ["amount", "value"]
