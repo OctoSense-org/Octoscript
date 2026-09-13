@@ -458,6 +458,166 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
+name = "octoscript-capabilities"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "getrandom 0.3.4",
+ "keyring",
+ "makepad-script",
+ "octoscript-core",
+ "octoscript-protocol",
+ "octoscript-sandbox",
+ "octoscript-schema",
+ "octoscript-storage",
+ "octoscript-worker",
+ "serde",
+ "serde_json",
+ "ureq",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-cli"
+version = "0.1.0"
+dependencies = [
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-workflow",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-core"
+version = "0.1.0"
+dependencies = [
+ "makepad-script",
+ "octoscript-ui-l0",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-linux-project-quota"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "linux-raw-sys",
+]
+
+[[package]]
+name = "octoscript-linux-seccomp"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "linux-raw-sys",
+]
+
+[[package]]
+name = "octoscript-lsp"
+version = "0.1.0"
+dependencies = [
+ "lsp-server",
+ "lsp-types",
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-schema",
+ "octoscript-workflow",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-media-host"
+version = "0.1.0"
+dependencies = [
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-workflow",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-protocol"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "constant_time_eq",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-sandbox"
+version = "0.1.0"
+dependencies = [
+ "close_fds",
+ "landlock",
+ "linux-raw-sys",
+ "octoscript-linux-project-quota",
+ "octoscript-linux-seccomp",
+ "octoscript-protocol",
+ "rustix",
+]
+
+[[package]]
+name = "octoscript-schema"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-storage"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "blake3",
+ "keyring",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "subtle",
+ "ureq",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-ui-l0"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-worker"
+version = "0.1.0"
+dependencies = [
+ "octoscript-protocol",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-workflow"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "getrandom 0.3.4",
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-protocol",
+ "octoscript-sandbox",
+ "octoscript-schema",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -697,155 +857,6 @@ name = "smallvec"
 version = "1.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
-
-[[package]]
-name = "octoscript-capabilities"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "getrandom 0.3.4",
- "keyring",
- "makepad-script",
- "serde",
- "serde_json",
- "octoscript-core",
- "octoscript-protocol",
- "octoscript-sandbox",
- "octoscript-schema",
- "octoscript-storage",
- "octoscript-worker",
- "ureq",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-cli"
-version = "0.1.0"
-dependencies = [
- "serde_json",
- "octoscript-capabilities",
- "octoscript-core",
- "octoscript-workflow",
-]
-
-[[package]]
-name = "octoscript-core"
-version = "0.1.0"
-dependencies = [
- "makepad-script",
- "serde_json",
- "octoscript-ui-l0",
-]
-
-[[package]]
-name = "octoscript-linux-project-quota"
-version = "0.1.0"
-dependencies = [
- "libc",
- "linux-raw-sys",
-]
-
-[[package]]
-name = "octoscript-linux-seccomp"
-version = "0.1.0"
-dependencies = [
- "libc",
- "linux-raw-sys",
-]
-
-[[package]]
-name = "octoscript-lsp"
-version = "0.1.0"
-dependencies = [
- "lsp-server",
- "lsp-types",
- "serde_json",
- "octoscript-capabilities",
- "octoscript-core",
- "octoscript-schema",
- "octoscript-workflow",
-]
-
-[[package]]
-name = "octoscript-protocol"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "constant_time_eq",
- "serde",
- "serde_json",
- "octoscript-storage",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-sandbox"
-version = "0.1.0"
-dependencies = [
- "close_fds",
- "landlock",
- "linux-raw-sys",
- "rustix",
- "octoscript-linux-project-quota",
- "octoscript-linux-seccomp",
- "octoscript-protocol",
-]
-
-[[package]]
-name = "octoscript-schema"
-version = "0.1.0"
-dependencies = [
- "serde_json",
-]
-
-[[package]]
-name = "octoscript-storage"
-version = "0.1.0"
-dependencies = [
- "base64",
- "blake3",
- "keyring",
- "rusqlite",
- "serde",
- "serde_json",
- "subtle",
- "ureq",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-ui-l0"
-version = "0.1.0"
-dependencies = [
- "serde_json",
-]
-
-[[package]]
-name = "octoscript-worker"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "octoscript-protocol",
- "octoscript-storage",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-workflow"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "getrandom 0.3.4",
- "serde",
- "serde_json",
- "octoscript-capabilities",
- "octoscript-core",
- "octoscript-protocol",
- "octoscript-sandbox",
- "octoscript-schema",
- "octoscript-storage",
-]
 
 [[package]]
 name = "sqlite-wasm-rs"

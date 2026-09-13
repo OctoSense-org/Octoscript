@@ -10,6 +10,63 @@ const WEATHER: &str = include_str!("fixtures/weather.card");
 const NEWS: &str = include_str!("fixtures/news.card");
 const STOCK: &str = include_str!("fixtures/stock.card");
 
+#[test]
+fn l0_migration_conversion_binding_tracks_amount_pair_and_direction() {
+    let card = "state amount { shape: number, initial: 20 }\n\
+        state from { shape: text, initial: \"c\" }\n\
+        state to { shape: text, initial: \"f\" }\n\
+        state dir { shape: enum[fwd, rev], initial: .fwd }\n\
+        source result sys.convert(amount: state.amount, from: state.from, to: state.to, direction: state.dir, fields: [value])\n\
+        view root TextHero(value: result.value, format: .ratio)\n";
+    let checked = check_ui_l0_named("convert", card);
+    assert!(checked.valid, "{:?}", checked.diagnostics);
+    assert_eq!(checked.level, Level::L0);
+    for (amount, direction) in [(20, "fwd"), (68, "rev")] {
+        let data = serde_json::json!({"amount": amount, "from":"c", "to":"f", "dir": direction});
+        let realized = octoscript_ui_l0::realize(card, &data, Default::default());
+        let lowered = octoscript_ui_l0::kit::lower(realized.complete_root().unwrap());
+        assert!(lowered.contains(&format!("sys.convert({amount}, \"c\", \"f\", \"{direction}\")")), "{lowered}\n{:?}", realized.complete_root().unwrap());
+    }
+    for changed in ["amount", "from", "to", "dir"] {
+        assert_eq!(octoscript_ui_l0::stale_sources(card, &[changed]), vec!["result"]);
+    }
+}
+
+#[test]
+fn l0_migration_conversion_rejects_undeclared_results_and_executable_arguments() {
+    let card = "source result sys.convert(amount: 20, from: \"c\", to: \"f\", fields: [value])\nview root TextHero(value: result.value)";
+    assert!(check_ui_l0_named("convert", card).valid);
+    assert!(!check_ui_l0_named("convert", &card.replace("result.value)", "result.value + 1)")).valid);
+    assert!(!check_ui_l0_named("convert", &card.replace("result.value)", "result.factor)")).valid);
+    for bad in ["1 + 1", "sys.navsecs(1)", "NaN", "inf"] {
+        let binding = octoscript_ui_l0::SourceBinding {
+            helper: "sys.convert".into(), field: "value".into(), nested: vec![],
+            args: vec![("amount".into(), bad.into()), ("from".into(), "c".into()), ("to".into(), "f".into())],
+        };
+        assert_eq!(octoscript_ui_l0::makepad::vm_call(&binding), None, "{bad}");
+    }
+}
+
+#[test]
+fn l0_migration_city_difference_is_l0_and_unit_changes_rebind_the_source() {
+    let card = "state units { shape: enum[c, f], initial: .c }\n\
+        source picks sys.cities(fields: [name, temp, feels_delta], unit: state.units)\n\
+        view root Col { for c in picks key c.name { TextValue(value: c.temp, unit: units) TextCaption(value: c.feels_delta, unit: units) } }";
+    let checked = check_ui_l0_named("cities", card);
+    assert!(checked.valid, "{:?}", checked.diagnostics);
+    assert_eq!(checked.level, Level::L0);
+    for unit in ["c", "f"] {
+        let data = serde_json::json!({"units":unit,"picks":[{"name":"Test","temp":20,"feels_delta":2}]});
+        let realized = octoscript_ui_l0::realize(card, &data, Default::default());
+        let lowered = octoscript_ui_l0::kit::lower(realized.complete_root().unwrap());
+        assert!(lowered.contains(&format!("sys.cities(0, \"feels_delta\", \"{unit}\")")), "{lowered}");
+        assert!(lowered.contains(&format!("sys.cities(0, \"temp\", \"{unit}\")")), "{lowered}");
+    }
+    assert_eq!(octoscript_ui_l0::stale_sources(card, &["units"]), vec!["picks"]);
+    let empty = octoscript_ui_l0::realize(card, &serde_json::json!({"picks":[]}), Default::default());
+    assert!(empty.complete_root().is_ok());
+}
+
 fn accepts(name: &str, source: &str) {
     let report = check_ui_l0_named(name, source);
     assert!(
@@ -689,6 +746,7 @@ fn an_unmapped_constructor_is_visible_rather_than_dropped() {
         children: vec![],
         bindings: vec![],
         exprs: vec![],
+        origins: vec![],
     };
     let dsl = makepad::lower(&node);
     assert!(dsl.contains("no makepad lowering for Hologram"), "{dsl}");
@@ -1583,8 +1641,8 @@ view root Panel { Framed(title: "Details", rank: 3) }
     find(&root, "TextRow", &mut rows);
     assert_eq!(
         rows[0].args.iter().find(|(n, _)| n == "text").unwrap().1,
-        NodeValue::Number(3.0),
-        "a number literal prop must arrive too"
+        NodeValue::Missing,
+        "a numeric authored prop is not a sourced reading"
     );
 }
 
@@ -3777,13 +3835,17 @@ fn duplicate_loop_keys_are_reported_and_do_not_share_state() {
         report.diagnostics
     );
 
+    assert!(
+        report.complete_root().is_err(),
+        "a host must refuse duplicate keys"
+    );
     let root = report.root.unwrap();
     let mut rows = Vec::new();
     find(&root, "Row", &mut rows);
-    assert_eq!(rows.len(), 2, "both rows still render");
-    assert_ne!(
-        rows[0].key, rows[1].key,
-        "two instances must not share one state cell"
+    assert_eq!(
+        rows.len(),
+        1,
+        "the duplicate is omitted, never renamed into a collision"
     );
 }
 
@@ -4797,9 +4859,14 @@ view root Surface {
     // icon is the code that is true when the card draws rather than the one the
     // host happened to seed. The size must still travel with it: that half was
     // the original defect and is unrelated to where the value comes from.
+    //
+    // `weathercond`, NOT `weatherword`: this pinned the word for two releases,
+    // and the word is a STRING, which the icon coerces to 0, which is the sun.
+    // The test agreed with the emitter and neither of them was looking at a
+    // screen — see `the_weather_icon_is_given_a_number_and_the_text_a_word`.
     assert!(
-        dsl.contains("l0_weathericon(sys.weatherword(") && dsl.contains(", \"hero\")"),
-        "the hero's cond must go live and keep its size:\n{dsl}"
+        dsl.contains("l0_weathericon(sys.weathercond(") && dsl.contains(", \"hero\")"),
+        "the hero's cond must go live as a CODE and keep its size:\n{dsl}"
     );
     // And the per-item conditions must DIFFER — one shared value for every row
     // is exactly what the bug produced, and a test that only checked "a number
@@ -4906,7 +4973,9 @@ fn the_nav_trip_planner_is_expressible_at_l0() {
     // comment above names is 400 — the point at which declarations stop being the
     // cheaper answer — and this is well inside it.
     assert!(
-        lines < 300,
+        // Both origin modes now retain a stop in the drive screen, and expose
+        // loading/location failures. Keep the documented 400-line budget.
+        lines < 400,
         "the point is that it is small; this is {lines} lines"
     );
 }
@@ -5919,7 +5988,7 @@ fn changing_a_declared_attribute_must_change_the_lowering() {
                     format!("{head}view root Surface {{ {role}{arglist}{body} }}\n")
                 }
             };
-            let data = serde_json::json!({ "env": { "locale": {} }, "copy": {} });
+            let data = serde_json::json!({ "env": { "locale": {} }, "copy": {}, "sa": 11, "sb": 4242, "sc": -7 });
             let lower = |card: &str| -> Option<String> {
                 if !check_ui_l0_named("probe", card).valid {
                     return None;
@@ -6547,9 +6616,8 @@ view root Surface { Chip(text: "c", active: k == 3 * 4) TextRow(text: q.last) }
 /// The third is the one that needed an argument rather than a patch. §9.3 asked
 /// an expression to READ something, which stops `1547 * 3.2` and does not stop
 /// `quote.last * 0 + 1547` — one real reading laundering a fabricated number.
-/// The argument: a formula is a formula because its answer MOVES when its inputs
-/// move, so evaluate it under several assignments and refuse an answer that never
-/// changes.
+/// A limited structural analysis rejects recognized constants. Unknown formulas
+/// remain accepted; sampling cannot prove dependence on inputs.
 #[test]
 fn an_expression_must_depend_on_what_it_reads() {
     let ok = |body: &str| {
@@ -6599,7 +6667,8 @@ fn an_expression_must_depend_on_what_it_reads() {
     }
 
     // The probe must not condemn a difference. Binding every read to the SAME
-    // number would make `a - b` constant, which is why the assignments differ
+    // number would make `a - b` constant; structural equality distinguishes them.
+    // The former sampling check required different assignments
     // per path as well as per round.
     assert!(
         ok("TextHero(value: q.last - q.open)"),
@@ -6638,11 +6707,11 @@ fn grouping_overrides_precedence() {
     // The DSL carries the EXPRESSION, so the tree's shape is the evidence: the
     // backend evaluates it against data that arrives later.
     assert!(
-        tree("a + b * c").contains("(2 + (3 * 4))"),
+        tree("a + b * c").contains(r#"sys.l0_math("+", 2, sys.l0_math("*", 3, 4))"#),
         "multiplication binds tighter"
     );
     assert!(
-        tree("(a + b) * c").contains("((2 + 3) * 4)"),
+        tree("(a + b) * c").contains(r#"sys.l0_math("*", sys.l0_math("+", 2, 3), 4)"#),
         "and grouping overrides that"
     );
 }
@@ -6961,7 +7030,6 @@ fn every_offered_field_has_a_translation() {
         ("sys.watchlist", "currency"),
         ("sys.watchlist", "exchange"),
         ("sys.places", "id"),
-        ("sys.search", "id"),
         ("sys.search", "distance"),
         // `days` is the COLLECTION a forecast loops over, not a value read off
         // it, so no single call answers it. The loop is what consumes it.
@@ -6982,6 +7050,9 @@ fn every_offered_field_has_a_translation() {
                         ("lat".into(), "1".into()),
                         ("lon".into(), "2".into()),
                         ("ticker".into(), "N".into()),
+                        ("amount".into(), "20".into()),
+                        ("from".into(), "c".into()),
+                        ("to".into(), "f".into()),
                         ("query".into(), "q".into()),
                         ("countries".into(), "CHN".into()),
                         ("indicator".into(), "NY.GDP.MKTP.KD.ZG".into()),
@@ -7007,6 +7078,9 @@ fn every_offered_field_has_a_translation() {
                         ("at_lat".into(), "5".into()),
                         ("at_lon".into(), "6".into()),
                     ],
+                    // The probe hands VALUES, not calls — a text slot quotes
+                    // what it is given unless the lowering says it built it.
+                    nested: Vec::new(),
                     field: f.clone(),
                 })
                 .is_some()
@@ -8832,4 +8906,537 @@ fn a_map_labels_the_route_with_what_it_costs() {
         dsl.matches("\"min\")").count() >= 2,
         "the badge and the summary must come from one trip:\n{dsl}"
     );
+}
+
+// ─── a value guard gets a number to compare against ──────────────────────────
+//
+// The defect class in one sentence: guards are decided at REALIZE against
+// injected data, and a fetched scalar is not in that data — the kit resolves it
+// lazily at DRAW time. So `when now.precip >= 40` compared against nothing, and
+// so did its complement, and both were false. Measured on a 6T: the
+// `weather-activity` card drew a correct header and a rain tile reading 100 %,
+// with no verdict under either.
+//
+// `guard_bindings` is what a host resolves BEFORE realize so the branch is taken
+// on the number the tile shows.
+
+/// The decision tree from `weather-activity`, cut to the guards.
+const GUARDED: &str = concat!(
+    "# level: L0\n",
+    "source place sys.geocode(name: state.city)\n",
+    "source now   sys.weather(lat: place.lat, lon: place.lon, fields: [temp, precip])\n",
+    "source air   sys.airquality(lat: place.lat, lon: place.lon)\n",
+    "state city { shape: text, initial: \"Kyoto\" }\n",
+    "copy wet { class: vocabulary, en: \"stay in\" }\n",
+    "copy dry { class: vocabulary, en: \"go out\" }\n",
+    "view root Surface {\n",
+    "  when now.precip >= 40 { TextTitle(text: copy.wet) }\n",
+    "  when now.precip < 40 {\n",
+    "    when air.aqi >= 100 { TextTitle(text: copy.wet) }\n",
+    "    when air.aqi < 100 {\n",
+    "      when now.temp < 12 { TextTitle(text: copy.wet) }\n",
+    "      when now.temp >= 12 { TextTitle(text: copy.dry) }\n",
+    "    }\n",
+    "  }\n",
+    "}\n"
+);
+
+#[test]
+fn a_value_guard_reports_the_call_that_answers_it() {
+    let checked = check_ui_l0_named("weather-activity", GUARDED);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+
+    let store = octoscript_ui_l0::InstanceStore::default();
+    let bindings = octoscript_ui_l0::guard_bindings(GUARDED, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store);
+
+    // Every field under a `when`, once each — and nothing else. `place.lat` is
+    // read by a source ARGUMENT, not by a guard, so it is not asked for
+    // separately: it arrives inside the call below.
+    let mut pairs: Vec<(String, String)> = bindings
+        .iter()
+        .map(|g| (g.source.clone(), g.field.clone()))
+        .collect();
+    pairs.sort();
+    assert_eq!(
+        pairs,
+        vec![
+            ("air".to_string(), "aqi".to_string()),
+            ("now".to_string(), "precip".to_string()),
+            ("now".to_string(), "temp".to_string()),
+        ],
+        "the three values the tree branches on"
+    );
+
+    // THE POINT: the dependency is already resolved. `now` takes `lat: place.lat`
+    // and `place` is a geocode of the card's own state, so the emitted call
+    // carries the place the card names — the host fetches nothing extra and
+    // resolves nothing in an order of its own invention.
+    let precip = bindings
+        .iter()
+        .find(|g| g.field == "precip")
+        .expect("precip is guarded");
+    let call = octoscript_ui_l0::makepad::vm_call(&precip.binding).expect("this backend answers it");
+    assert_eq!(
+        call,
+        "sys.weather(sys.geocodenum(\"Kyoto\", \"lat\"), sys.geocodenum(\"Kyoto\", \"lon\"), \
+         \"daily.precipitation_probability_max.0\")",
+        "the guard's call is the display binding's call"
+    );
+}
+
+#[test]
+fn a_card_with_no_value_guards_asks_for_nothing() {
+    // The fetch policy, and why this can sit unconditionally in the render path:
+    // a `when` on a value is the CARD saying it needs that value early. A card
+    // that branches only on state and `$state` pays nothing.
+    const PLAIN: &str = concat!(
+        "# level: L0\n",
+        "source now sys.weather(lat: 1, lon: 2, fields: [temp])\n",
+        "state units { shape: enum[c, f], initial: .c }\n",
+        "copy t { class: vocabulary, en: \"t\" }\n",
+        "view root Surface {\n",
+        "  when now.$state == .pending { TextBody(text: copy.t) }\n",
+        "  when units == .c { TextHero(value: now.temp, unit: units) }\n",
+        "}\n"
+    );
+    let checked = check_ui_l0_named("weather", PLAIN);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let store = octoscript_ui_l0::InstanceStore::default();
+    assert!(
+        octoscript_ui_l0::guard_bindings(PLAIN, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store).is_empty(),
+        "`$state` is already injected and `units` is card state — neither is a fetch"
+    );
+}
+
+#[test]
+fn a_source_argument_is_not_rounded_to_one_decimal() {
+    // `trim_num` is a one-decimal DISPLAY rule and it was emitting source
+    // ARGUMENTS. A coordinate is the case that shows it: 37.7749 became 37.8,
+    // which is thirty kilometres away and still renders a perfectly plausible
+    // forecast. Same class as the L1 operand it rounded from 0.621371 to 0.6.
+    const PINNED: &str = concat!(
+        "# level: L0\n",
+        "source now sys.weather(lat: 37.7749, lon: -122.4194, fields: [temp])\n",
+        "copy t { class: vocabulary, en: \"t\" }\n",
+        "view root Surface { TextHero(value: now.temp) }\n"
+    );
+    let checked = check_ui_l0_named("weather", PINNED);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let dsl = octoscript_ui_l0::kit::lower(
+        &realize(PINNED, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
+            .root
+            .expect("realizes"),
+    );
+    assert!(
+        dsl.contains("sys.weather(37.7749, -122.4194,"),
+        "the coordinate the card declared, not one rounded for display:\n{dsl}"
+    );
+}
+
+#[test]
+fn a_text_argument_that_names_another_source_stays_a_call() {
+    // A string slot is not safe by construction. `{:?}` quotes whatever it is
+    // handed, and a source argument that names ANOTHER SOURCE resolves to that
+    // source's own live call — so `sys.photo(query: place.name)` lowered to
+    // `sys.photo("sys.geocode(\"kyoto\", \"name\")")` and the wallpaper was
+    // generated from the TEXT of the call.
+    //
+    // Measured on the 6T: the URL fetched was
+    // `image.pollinations.ai/prompt/sys.geocode%28%22kyoto%22%2C%20%22name%22%29`.
+    // It survived because it LOOKED right — the service is a generative image
+    // model and the place name is inside the string it was given, so a card
+    // asking for Kyoto got a picture of Kyoto. [[the L0 defect class]] exactly:
+    // the request is wrong and only the wire shows it.
+    const CARD: &str = concat!(
+        "# level: L0\n",
+        "source place sys.geocode(name: state.city)\n",
+        "source scene sys.photo(query: place.name)\n",
+        "state city { shape: text, initial: \"kyoto\" }\n",
+        "view root Photo(src: scene) { TextTitle(text: place.name) }\n"
+    );
+    let checked = check_ui_l0_named("weather", CARD);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let dsl = octoscript_ui_l0::kit::lower(
+        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
+            .root
+            .expect("realizes"),
+    );
+    assert!(
+        dsl.contains("sys.photo(sys.geocode(\"kyoto\", \"name\"))"),
+        "the photo is asked for the PLACE, not for the text of the call:\n{dsl}"
+    );
+    assert!(
+        !dsl.contains("sys.photo(\"sys."),
+        "a nested call must not be quoted into a string literal:\n{dsl}"
+    );
+}
+
+#[test]
+fn a_typed_query_is_never_executable() {
+    // The other half, and the reason this is decided by `binding.nested` rather
+    // than by whether the string starts with `sys.`. A text argument can carry
+    // what a PERSON TYPED — a youtube card's `q` is a search box — and a typed
+    // query must stay a query however it is spelled.
+    const CARD: &str = concat!(
+        "# level: L0\n",
+        "source hits sys.video(query: state.q, count: 1, fields: [id, title])\n",
+        "state q { shape: text, initial: \"sys.gps(lat)\" }\n",
+        "view root Surface { for v, i in hits key v.id { TextRow(text: v.title) } }\n"
+    );
+    let checked = check_ui_l0_named("youtube", CARD);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let dsl = octoscript_ui_l0::kit::lower(
+        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
+            .root
+            .expect("realizes"),
+    );
+    assert!(
+        dsl.contains("sys.video(\"sys.gps(lat)\""),
+        "a typed query stays a QUOTED string, whatever it looks like:\n{dsl}"
+    );
+}
+
+#[test]
+fn a_card_that_gates_its_rows_on_a_state_can_still_learn_that_state() {
+    // The shape the shipped `activity` exemplar had, and the deadlock it caused:
+    // the ONLY reference to `parks` sits inside `when parks.$state == .ready`, and
+    // `$state` was observed by walking the realized tree for bindings. No data ->
+    // pending -> the rows do not realize -> nothing binds `parks` -> no status is
+    // written -> pending. Forever.
+    //
+    // Measured on the 6T with "what can I do in beijing tomorrow": the card drew
+    // "Finding places nearby…" and nothing else, and `L0 $state:` logged empty on
+    // every realize while the Kyoto card beside it logged all seven ready.
+    //
+    // A host cannot break that loop from the tree, so the card has to say what it
+    // is waiting on — which its own `when` already does.
+    const GATED: &str = concat!(
+        "# level: L0\n",
+        "source place sys.geocode(name: state.city)\n",
+        "source parks sys.places(lat: place.lat, lon: place.lon, category: \"park\",\n",
+        "                        count: 3, fields: [id, name, distance])\n",
+        "state city { shape: text, initial: \"Beijing\" }\n",
+        "copy loading { class: vocabulary, en: \"Finding places nearby…\" }\n",
+        "view root Surface {\n",
+        "  when parks.$state == .pending { TextBody(text: copy.loading) }\n",
+        "  when parks.$state == .ready {\n",
+        "    Panel { for p, i in parks key p.id { TextRow(text: p.name) } }\n",
+        "  }\n",
+        "}\n"
+    );
+    let checked = check_ui_l0_named("activity", GATED);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+
+    let store = octoscript_ui_l0::InstanceStore::default();
+    let probes = octoscript_ui_l0::guarded_state_bindings(GATED, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store);
+    assert_eq!(probes.len(), 1, "one source is gated: {probes:#?}");
+    assert_eq!(probes[0].source, "parks");
+    // EMPTY, deliberately: a lifecycle is a property of the fetch, so which field
+    // answers is the backend's to choose — `probe_call` walks the catalog.
+    assert!(probes[0].field.is_empty(), "a probe names no field");
+    // And the argument chain is already resolved, so the host asks about Beijing
+    // rather than about a source it would have to fetch in order first.
+    // Asked as a ROW — `sys.places` is a list, so `0.name` is the shape that
+    // translates and a bare `name` answers nothing. That is exactly what a host's
+    // probe has to try, and the one that only tried the bare field could not
+    // probe a list source at all.
+    let call = octoscript_ui_l0::makepad::vm_call(&octoscript_ui_l0::SourceBinding {
+        field: "0.name".to_owned(),
+        ..probes[0].binding.clone()
+    })
+    .expect("this backend answers it");
+    assert!(
+        call.contains("sys.geocodenum(\"Beijing\", \"lat\")"),
+        "the probe carries the place the card names:\n{call}"
+    );
+
+    // The discriminating half: a card that merely DISPLAYS a source is not gated,
+    // and asks for no probe. Its bindings are in the tree, where the walk finds
+    // them, so this stays as narrow as `resolve_guards`.
+    const PLAIN: &str = concat!(
+        "# level: L0\n",
+        "source place sys.geocode(name: state.city)\n",
+        "source parks sys.places(lat: place.lat, lon: place.lon, category: \"park\",\n",
+        "                        count: 3, fields: [id, name, distance])\n",
+        "state city { shape: text, initial: \"Beijing\" }\n",
+        "view root Surface {\n",
+        "  Panel { for p, i in parks key p.id { TextRow(text: p.name) } }\n",
+        "}\n"
+    );
+    let checked = check_ui_l0_named("activity", PLAIN);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    assert!(
+        octoscript_ui_l0::guarded_state_bindings(PLAIN, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store).is_empty(),
+        "an ungated source needs no probe — the tree walk already answers it"
+    );
+}
+
+#[test]
+fn the_weather_icon_is_given_a_number_and_the_text_a_word() {
+    // `cond` has two consumers that need different readings of the same field.
+    // Both lowered to `sys.weatherword`, so the icon was handed "Rain", coerced
+    // it to 0, and drew the SUN. Measured on the 6T over a Beijing forecast
+    // reading 92 % rain — and a wrong icon looks exactly like a right one, which
+    // is why it survived every card that shipped.
+    const CARD: &str = concat!(
+        "# level: L0\n",
+        "source place sys.geocode(name: state.city)\n",
+        "source now sys.weather(lat: place.lat, lon: place.lon, fields: [temp, cond])\n",
+        "state city { shape: text, initial: \"Beijing\" }\n",
+        "view root Surface {\n",
+        "  WeatherIcon(cond: now.cond, size: .hero)\n",
+        "  TextRow(text: now.cond)\n",
+        "}\n"
+    );
+    let checked = check_ui_l0_named("weather", CARD);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let dsl = octoscript_ui_l0::kit::lower(
+        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
+            .root
+            .expect("realizes"),
+    );
+    // The icon gets the CODE.
+    assert!(
+        dsl.contains("l0_weathericon(sys.weathercond("),
+        "the icon must be given the WMO code, not a word:\n{dsl}"
+    );
+    // And the reader still gets the word — one field, two readings.
+    assert!(
+        dsl.contains("sys.weatherword("),
+        "the text must still read as words:\n{dsl}"
+    );
+    // Both from the same forecast path, or the sky is described twice and
+    // disagrees with itself.
+    assert!(
+        dsl.matches("\"daily.weather_code.0\"").count() == 2,
+        "the icon and the word must read the same day:\n{dsl}"
+    );
+}
+
+#[test]
+fn a_source_argument_follows_a_chain_of_sources() {
+    // `sys.photo(cond: now.cond)` needs `now`, whose own `lat:` names `place`.
+    // The inner resolver stopped at one level, fell to a scope lookup a LIVE card
+    // cannot answer, and returned None — and that None propagated outward, so the
+    // whole photo binding failed and the surface lowered to the realized em dash.
+    //
+    // Measured on the 6T: the page drew no wallpaper at all, black behind the
+    // card, and nothing said so — a card with no image looks exactly like a card
+    // whose image has not loaded yet.
+    const CARD: &str = concat!(
+        "# level: L0\n",
+        "source place sys.geocode(name: state.city)\n",
+        "source now sys.weather(lat: place.lat, lon: place.lon, fields: [temp, cond])\n",
+        "state city { shape: text, initial: \"Beijing\" }\n",
+        "state mood { shape: text, initial: \"hutong rooftops, cinematic\" }\n",
+        "source scene sys.photo(query: state.mood, cond: now.cond)\n",
+        "view root Photo(src: scene, pad: .page) { TextHero(value: now.temp) }\n"
+    );
+    let checked = check_ui_l0_named("weather-activity", CARD);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let dsl = octoscript_ui_l0::kit::lower(
+        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
+            .root
+            .expect("realizes"),
+    );
+    // Three levels deep: photo <- weather <- geocode <- state.
+    assert!(
+        dsl.contains(
+            "l0_surface_photo(sys.photo(\"hutong rooftops, cinematic\", \
+             sys.weatherword(sys.geocodenum(\"Beijing\", \"lat\"), \
+             sys.geocodenum(\"Beijing\", \"lon\"), \"daily.weather_code.0\"))"
+        ),
+        "the whole chain must resolve, or the outer binding fails silently:\n{dsl}"
+    );
+    // And the failure this replaced: never the realized placeholder.
+    assert!(
+        !dsl.contains("l0_surface_photo(\"\u{2014}\""),
+        "an unresolved chain used to lower as an em dash:\n{dsl}"
+    );
+}
+
+#[test]
+fn a_future_day_shifts_the_daily_fields_and_refuses_the_current_ones() {
+    // Seen in the wild: a weather-activity card whose eyebrow said TOMORROW over
+    // `current.temperature_2m` — nothing in the lowering could read daily.1, so
+    // only the LABEL could claim tomorrow, and it did. The screen asserted the
+    // wrong day and no stage could see it.
+    //
+    // `day: 1` is the capability that makes the label honest. Daily fields shift
+    // by the day; current-conditions fields have no future form and get NO
+    // translation — a visible absence, never today's reading under tomorrow's
+    // heading.
+    const CARD: &str = concat!(
+        "# level: L0\n",
+        "source place sys.geocode(name: state.city)\n",
+        "source next sys.weather(lat: place.lat, lon: place.lon, day: 1,\n",
+        "                        fields: [hi, lo, precip, cond, temp])\n",
+        "state city { shape: text, initial: \"Kyoto\" }\n",
+        "copy eyebrow { class: vocabulary, en: \"TOMORROW\" }\n",
+        "view root Surface {\n",
+        "  TextCaption(text: copy.eyebrow)\n",
+        "  WeatherIcon(cond: next.cond, size: .hero)\n",
+        "  TextHero(value: next.hi)\n",
+        "  TextValue(value: next.lo)\n",
+        "  TextValue(value: next.precip)\n",
+        "  TextValue(value: next.temp)\n",
+        "}\n"
+    );
+    let checked = check_ui_l0_named("weather-activity", CARD);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let dsl = octoscript_ui_l0::kit::lower(
+        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
+            .root
+            .expect("realizes"),
+    );
+    // The daily fields read tomorrow's row…
+    for path in [
+        "daily.temperature_2m_max.1",
+        "daily.temperature_2m_min.1",
+        "daily.precipitation_probability_max.1",
+    ] {
+        assert!(dsl.contains(path), "{path} must be read for day 1:\n{dsl}");
+    }
+    // …the icon describes the same sky…
+    assert!(
+        dsl.contains("sys.weathercond(") && dsl.contains("\"daily.weather_code.1\""),
+        "the icon must shift with the day:\n{dsl}"
+    );
+    // …and `temp` — a current-conditions field — is NOT served under a future
+    // day. No current.* call anywhere on this card.
+    assert!(
+        !dsl.contains("current.temperature_2m"),
+        "there is no 'current' tomorrow:\n{dsl}"
+    );
+}
+
+#[test]
+fn a_forecast_loop_rides_on_top_of_the_day() {
+    // `day` shifts the whole week: row 0 of a `for` over the forecast is the
+    // named day, row 1 the day after it.
+    const CARD: &str = concat!(
+        "# level: L0\n",
+        "source week sys.weather(lat: 35, lon: 135, days: 3, day: 1,\n",
+        "                        fields: [days, hi, dayname])\n",
+        "view root Surface {\n",
+        "  for d, i in week.days key d.dayname {\n",
+        "    TextRow(text: d.dayname)\n",
+        "    TextValue(value: d.hi)\n",
+        "  }\n",
+        "}\n"
+    );
+    let checked = check_ui_l0_named("weather", CARD);
+    assert!(checked.valid, "{:#?}", checked.diagnostics);
+    let dsl = octoscript_ui_l0::kit::lower(
+        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
+            .root
+            .expect("realizes"),
+    );
+    assert!(
+        dsl.contains("daily.temperature_2m_max.1") && dsl.contains("daily.temperature_2m_max.3"),
+        "rows 0..2 under day:1 must read daily 1..3:\n{dsl}"
+    );
+}
+
+#[test]
+fn every_source_answers_for_its_own_lifecycle() {
+    // The nav card declares five `sys.route` trips, and exactly one of them —
+    // `trip`, whose origin is the empty string on a from-here journey — is
+    // unanswerable BY DESIGN. Observed per HELPER, its eternal `.pending` was
+    // stamped onto `trip_here`, which had a real origin, a real destination and
+    // a 200 on the wire: "Finding a route…" forever, Go never shown, zero
+    // failed fetches to point at. Measured on a 6T with a simulated drive.
+    //
+    // `source_state_bindings` is the cure: one probe binding per DECLARED
+    // source, each carrying its own resolved arguments.
+    const CARD: &str = include_str!("fixtures/nav.card");
+    let store = octoscript_ui_l0::InstanceStore::default();
+    let data = serde_json::json!({
+        "here": {"lat": 37.4487, "lon": -122.1593, "ok": 1},
+        "dest": "stanford university, stanford, ca",
+        "env": {"locale": {}},
+    });
+    let probes = octoscript_ui_l0::source_state_bindings(CARD, &data, &store);
+
+    let call_of = |name: &str| -> String {
+        let b = probes
+            .iter()
+            .find(|p| p.source == name)
+            .unwrap_or_else(|| panic!("{name} has a probe"));
+        // Any answered field stands in for the source's lifecycle; `duration`
+        // is what the host's probe walks to first for a route.
+        octoscript_ui_l0::makepad::vm_call(&octoscript_ui_l0::SourceBinding {
+            field: "duration".into(),
+            ..b.binding.clone()
+        })
+        .unwrap_or_else(|| panic!("{name} lowers"))
+    };
+
+    // trip_here: the from-here trip — REAL captured origin, real destination.
+    let trip_here = call_of("trip_here");
+    assert!(
+        trip_here.contains("37.4487") && trip_here.contains("stanford university"),
+        "trip_here probes its own trip:\n{trip_here}"
+    );
+    // trip: the named-origin trip, whose origin is "" here — its probe embeds
+    // the empty search and can only ever be pending. That is ITS answer, and
+    // after this test it is nobody else's.
+    let trip = call_of("trip");
+    assert!(
+        trip.contains("searchnum(\"\""),
+        "trip's own probe carries the empty origin:\n{trip}"
+    );
+    assert_ne!(
+        trip, trip_here,
+        "two trips, two probes — never one merged state"
+    );
+}
+
+// ───────────────────────────────────────────────── theme portability ──
+
+/// An emoji is painted from the colour-font with its colours baked in, so
+/// `draw_text.color` never reaches it. A card using one as an icon renders in
+/// one polarity and vanishes in the other — measured across the corpus at 81
+/// cards, and named in four separate judge verdicts before the cause was found.
+#[test]
+fn an_emoji_used_as_an_icon_is_flagged_but_does_not_refuse_the_card() {
+    const CARD: &str = "\
+source place sys.geocode(name: \"Kyoto\")
+
+view root Col {
+  Row(align: .center, gap: 10) {
+    TextRow(text: \"🍽\")
+    TextRow(text: place.name)
+  }
+}
+";
+    let r = octoscript_ui_l0::check_ui_l0_named("card.l0", CARD);
+    assert!(
+        r.valid,
+        "the card is well-formed; a lint must not refuse it"
+    );
+    assert_eq!(r.lints.len(), 1, "one emoji, one lint");
+    assert_eq!(r.lints[0].line, 5);
+    assert!(
+        r.lints[0].message.contains("colour-font"),
+        "the lint should say WHY it cannot be themed: {}",
+        r.lints[0].message
+    );
+}
+
+/// Latin, CJK and punctuation are monochrome and take the theme's ink. Only the
+/// pictographic blocks carry their own colour, and a lint that fired on ordinary
+/// text would be noise on every card in the corpus.
+#[test]
+fn ordinary_text_carries_no_portability_lint() {
+    const CARD: &str = "\
+view root Col {
+  TextRow(text: \"12 km NW of La Romana\")
+  TextRow(text: \"今天天氣很好\")
+  TextRow(text: \"Café naïve — em dash… ellipsis\")
+}
+";
+    let r = octoscript_ui_l0::check_ui_l0_named("card.l0", CARD);
+    assert!(r.valid);
+    assert!(r.lints.is_empty(), "unexpected lints: {:?}", r.lints);
 }

@@ -13,6 +13,7 @@ members = [
     "crates/octoscript-workflow",
     "crates/octoscript-cli",
     "crates/octoscript-lsp",
+    "crates/octoscript-media-host",
 ]
 default-members = [
     "crates/octoscript-core",
