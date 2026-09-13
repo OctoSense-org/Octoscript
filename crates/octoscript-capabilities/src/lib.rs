@@ -18,8 +18,8 @@ use std::time::{Duration, Instant};
 
 use makepad_script::{
     id, id_lut, script_args_def, script_err_not_allowed, script_err_unexpected, script_value,
-    LiveId, ScriptHandle, ScriptHandleGc, ScriptHandleType, ScriptIp, ScriptThreadId, ScriptValue,
-    NIL,
+    LiveId, ScriptHandle, ScriptHandleGc, ScriptHandleType, ScriptIp, ScriptStringSink,
+    ScriptThreadId, ScriptValue, NIL,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub use serde_json::{json, Value as JsonValue};
@@ -5793,7 +5793,7 @@ fn install_capability_module(
                                 )
                             }
                         };
-                        let output = match vm.host.downcast_mut::<CapabilityHost>() {
+                        let output = match vm.host.as_any_mut().downcast_mut::<CapabilityHost>() {
                             Some(host) => host.call_json(&tool, &input),
                             None => {
                                 return script_err_unexpected!(
@@ -5841,7 +5841,7 @@ fn install_capability_module(
                                 )
                             }
                         };
-                        let result = match vm.host.downcast_mut::<CapabilityHost>() {
+                        let result = match vm.host.as_any_mut().downcast_mut::<CapabilityHost>() {
                             Some(host) => host.begin_async_json(&tool, &input, max_pending_tools),
                             None => {
                                 return script_err_unexpected!(
@@ -5904,7 +5904,7 @@ fn install_tool_module(runtime: &mut Runtime<CapabilityHost, ()>, max_pending_to
                         )
                     }
                 };
-                let pending = match vm.host.downcast_ref::<CapabilityHost>() {
+                let pending = match vm.host.as_any().downcast_ref::<CapabilityHost>() {
                     Some(host) => host.pending(),
                     None => {
                         return script_err_unexpected!(
@@ -5951,7 +5951,9 @@ fn install_tool_module(runtime: &mut Runtime<CapabilityHost, ()>, max_pending_to
                 match ready {
                     Some(Ok(output)) => match promise_output {
                         ToolPromiseOutput::Text => {
-                            vm.new_string_with(|_, destination| destination.push_str(&output))
+                            vm.bx.heap.new_bounded_string_with(|_, destination| {
+                                destination.append_str(&output)
+                            })
                         }
                         ToolPromiseOutput::DecodedJson {
                             max_output_bytes,
@@ -5985,22 +5987,25 @@ fn install_tool_module(runtime: &mut Runtime<CapabilityHost, ()>, max_pending_to
                 let name = script_text(vm, script_value!(vm, args.name));
                 let input = script_text(vm, script_value!(vm, args.input));
                 let result = match (name, input) {
-                    (Ok(name), Ok(input)) => match vm.host.downcast_mut::<CapabilityHost>() {
-                        Some(host) => host.call(&name, &input),
-                        None => {
-                            return script_err_unexpected!(
-                                vm.bx.threads.cur_ref().trap,
-                                "invalid Octoscript capability host"
-                            )
+                    (Ok(name), Ok(input)) => {
+                        match vm.host.as_any_mut().downcast_mut::<CapabilityHost>() {
+                            Some(host) => host.call(&name, &input),
+                            None => {
+                                return script_err_unexpected!(
+                                    vm.bx.threads.cur_ref().trap,
+                                    "invalid Octoscript capability host"
+                                )
+                            }
                         }
-                    },
+                    }
                     (Err(error), _) | (_, Err(error)) => Err(error),
                 };
 
                 match result {
-                    Ok(output) => {
-                        vm.new_string_with(|_, destination| destination.push_str(&output))
-                    }
+                    Ok(output) => vm
+                        .bx
+                        .heap
+                        .new_bounded_string_with(|_, destination| destination.append_str(&output)),
                     Err(error) => {
                         script_err_not_allowed!(vm.bx.threads.cur_ref().trap, "{}", error)
                     }
@@ -6016,22 +6021,25 @@ fn install_tool_module(runtime: &mut Runtime<CapabilityHost, ()>, max_pending_to
                 let name = script_text(vm, script_value!(vm, args.name));
                 let input = script_json(vm, script_value!(vm, args.input));
                 let result = match (name, input) {
-                    (Ok(name), Ok(input)) => match vm.host.downcast_mut::<CapabilityHost>() {
-                        Some(host) => host.call_json(&name, &input),
-                        None => {
-                            return script_err_unexpected!(
-                                vm.bx.threads.cur_ref().trap,
-                                "invalid Octoscript capability host"
-                            )
+                    (Ok(name), Ok(input)) => {
+                        match vm.host.as_any_mut().downcast_mut::<CapabilityHost>() {
+                            Some(host) => host.call_json(&name, &input),
+                            None => {
+                                return script_err_unexpected!(
+                                    vm.bx.threads.cur_ref().trap,
+                                    "invalid Octoscript capability host"
+                                )
+                            }
                         }
-                    },
+                    }
                     (Err(error), _) | (_, Err(error)) => Err(error),
                 };
 
                 match result {
-                    Ok(output) => {
-                        vm.new_string_with(|_, destination| destination.push_str(&output))
-                    }
+                    Ok(output) => vm
+                        .bx
+                        .heap
+                        .new_bounded_string_with(|_, destination| destination.append_str(&output)),
                     Err(error) => {
                         script_err_not_allowed!(vm.bx.threads.cur_ref().trap, "{}", error)
                     }
@@ -6047,15 +6055,17 @@ fn install_tool_module(runtime: &mut Runtime<CapabilityHost, ()>, max_pending_to
                 let name = script_text(vm, script_value!(vm, args.name));
                 let input = script_text(vm, script_value!(vm, args.input));
                 let result = match (name, input) {
-                    (Ok(name), Ok(input)) => match vm.host.downcast_mut::<CapabilityHost>() {
-                        Some(host) => host.begin_async(&name, &input, max_pending_tools),
-                        None => {
-                            return script_err_unexpected!(
-                                vm.bx.threads.cur_ref().trap,
-                                "invalid Octoscript capability host"
-                            )
+                    (Ok(name), Ok(input)) => {
+                        match vm.host.as_any_mut().downcast_mut::<CapabilityHost>() {
+                            Some(host) => host.begin_async(&name, &input, max_pending_tools),
+                            None => {
+                                return script_err_unexpected!(
+                                    vm.bx.threads.cur_ref().trap,
+                                    "invalid Octoscript capability host"
+                                )
+                            }
                         }
-                    },
+                    }
                     (Err(error), _) | (_, Err(error)) => Err(error),
                 };
 
@@ -6084,15 +6094,17 @@ fn install_tool_module(runtime: &mut Runtime<CapabilityHost, ()>, max_pending_to
                 let name = script_text(vm, script_value!(vm, args.name));
                 let input = script_json(vm, script_value!(vm, args.input));
                 let result = match (name, input) {
-                    (Ok(name), Ok(input)) => match vm.host.downcast_mut::<CapabilityHost>() {
-                        Some(host) => host.begin_async_json(&name, &input, max_pending_tools),
-                        None => {
-                            return script_err_unexpected!(
-                                vm.bx.threads.cur_ref().trap,
-                                "invalid Octoscript capability host"
-                            )
+                    (Ok(name), Ok(input)) => {
+                        match vm.host.as_any_mut().downcast_mut::<CapabilityHost>() {
+                            Some(host) => host.begin_async_json(&name, &input, max_pending_tools),
+                            None => {
+                                return script_err_unexpected!(
+                                    vm.bx.threads.cur_ref().trap,
+                                    "invalid Octoscript capability host"
+                                )
+                            }
                         }
-                    },
+                    }
                     (Err(error), _) | (_, Err(error)) => Err(error),
                 };
 
