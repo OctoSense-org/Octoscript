@@ -799,8 +799,7 @@ impl Evaluation {
 /// install native bindings through [`Runtime::configure`]; scripts only see
 /// the bindings that configuration creates.
 pub struct Runtime<H: Any = (), S: Any = ()> {
-    host: H,
-    std: S,
+    host: vm::ScriptVmHost<H, S>,
     vm: Box<vm::ScriptVmBase>,
     limits: ExecutionLimits,
     json_method_limits: Rc<Cell<ScriptJsonMethodLimits>>,
@@ -818,8 +817,7 @@ impl<H: Any, S: Any> Runtime<H, S> {
         )));
         let installed_limits = json_method_limits.clone();
         let mut runtime = Self {
-            host,
-            std,
+            host: vm::ScriptVmHost::new(host, std),
             vm: Box::new(vm::ScriptVmBase::new()),
             limits,
             json_method_limits,
@@ -894,11 +892,11 @@ impl<H: Any, S: Any> Runtime<H, S> {
     }
 
     pub fn host(&self) -> &H {
-        &self.host
+        &self.host.host
     }
 
     pub fn host_mut(&mut self) -> &mut H {
-        &mut self.host
+        &mut self.host.host
     }
 
     /// Installs trusted native bindings. The standalone `std` module is frozen,
@@ -1215,7 +1213,6 @@ impl<H: Any, S: Any> Runtime<H, S> {
         let previous_vm = std::mem::replace(&mut self.vm, Box::new(vm::ScriptVmBase::new()));
         let mut vm = vm::ScriptVm {
             host: &mut self.host,
-            std: &mut self.std,
             bx: previous_vm,
         };
         let result = operation(&mut vm);
