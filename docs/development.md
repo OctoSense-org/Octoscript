@@ -44,16 +44,17 @@ The test only reads and validates quota state; it never enables, changes, or
 disables quota enforcement. It must fail rather than be skipped when that
 explicit host-provisioned fixture is invalid.
 
-The Makepad compatibility import is deliberately outside the workspace lint
-scope. Verify it explicitly after an upstream import or vendor patch:
+The Makepad VM is a pinned git dependency, not a workspace member, so it is
+outside the workspace lint scope. Verify it explicitly after a rev bump; Cargo
+resolves the packages from the pinned checkout:
 
 ```sh
-cargo test --manifest-path vendor/makepad/Cargo.toml -p makepad-script
-cargo test --manifest-path vendor/makepad/Cargo.toml -p makepad-regex
+cargo test -p makepad-script
+cargo test -p makepad-regex
 ```
 
 This keeps failures in source owned by Octoscript actionable while preserving
-separate behavioral coverage for the imported VM.
+separate behavioral coverage for the inherited VM.
 
 ## Sustained fuzzing
 
@@ -86,8 +87,9 @@ RUSTFLAGS='--cfg fuzzing' cargo +nightly fuzz tmin --sanitizer none syntax artif
 Then add a focused unit or integration regression and, when it improves the
 campaign, a reviewed text, JSON, or `.seed` input under `fuzz/corpus`. Do not
 commit raw generated corpus entries or `fuzz/artifacts`; they can include
-unreviewed input and are intentionally ignored. Keep vendor parser fixes
-documented in `vendor/makepad/PATCHES.md`.
+unreviewed input and are intentionally ignored. Parser fixes belong in the
+`octoscript` branch of `OctoSense-org/makepad` and reach this repository
+through a rev bump (see `UPSTREAM.md`).
 
 ## Language server
 
@@ -366,7 +368,7 @@ Octoscript source cap.
 ## Syntax fuzzing
 
 The standalone `fuzz` package has bounded targets. `syntax` differentially
-exercises the canonical profile and the vendored VM parser under a rotating set
+exercises the canonical profile and the inherited VM parser under a rotating set
 of valid resource profiles, from 64 bytes, 8 tokens, and 2 nesting levels up
 to a 16 KiB source cap, a 2,048-token cap, and a 64-level nesting cap. It also
 sends every bounded UTF-8 input through the broader VM-compatibility preflight,

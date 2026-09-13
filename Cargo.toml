@@ -29,7 +29,6 @@ default-members = [
     "crates/octoscript-cli",
     "crates/octoscript-lsp",
 ]
-exclude = ["vendor/makepad"]
 resolver = "2"
 
 [workspace.package]

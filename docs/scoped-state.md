@@ -15,13 +15,14 @@ question of *who emits* the declaration. §5.10.1 adds an obligation this docume
 carry: whoever owns the cells must be handed instance identity, because L0 rebuilds subtrees on
 data changes and a cell that cannot be re-found is a cell that is lost.
 
-`UPSTREAM.md` permits a behavioural change to the vendored VM "only when [it]
+`UPSTREAM.md` permits a behavioural change to the inherited VM "only when [it]
 implements a published Octoscript language contract". This is that contract. It is
 deliberately narrow: it publishes the smallest state mechanism that lets an
 interaction be handled locally, and defers everything that can be deferred.
 
-**This contract has more than one implementer.** Octoscript's vendored VM
-(`vendor/makepad/platform/script`, pinned to upstream `4f9ce7a8`) and the VM that
+**This contract has more than one implementer.** Octoscript's VM
+(`platform/script` on the `octoscript` branch of `OctoSense-org/makepad`, a
+pinned git dependency of `octoscript-core`) and the VM that
 ships on device in octos-one (`makepad/platform/script`) are independent
 lineages — neither contains the other's history. That is a deliberate position,
 not an accident awaiting a merge, and it has one consequence that governs
