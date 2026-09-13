@@ -17,7 +17,8 @@ embedded by a trusted application. Upstream modules and host bindings can be
 appropriate for a UI runtime, but they are not a stable capability boundary for
 untrusted generated programs.
 
-This repository vendors that substrate with provenance, then defines a
+This repository consumes that substrate as a pinned git dependency of the
+`octoscript` branch of `OctoSense-org/makepad`, then defines a
 separate portable language contract and host model:
 
 | Area | Makepad-oriented substrate | Octoscript runtime profile |

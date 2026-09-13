@@ -1,4 +1,12 @@
-# Local Vendor Patches
+# VM hardening history
+
+The changes described below were Octoscript's local patches to its formerly
+vendored copy of the Makepad VM (`vendor/makepad/PATCHES.md`). They were ported
+to the `octoscript` branch of OctoSense-org/makepad on 2026-09-13 (fork PR #1)
+and no longer live in this repository; Octoscript consumes them through the
+pinned `makepad-script` git dependency described in `UPSTREAM.md`. The text is
+kept as written, as a record of what was changed and why. The upstream-sync
+notes it contains refer to the old vendoring workflow and are historical.
 
 ## `platform/script`: language review fixes (#9–#18)
 

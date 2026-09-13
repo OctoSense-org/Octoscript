@@ -1,14 +1,15 @@
 # Contributing
 
-Octoscript accepts changes to the language core, capability host, workflow engine,
-or compatibility import only when the security boundary remains explicit.
+Octoscript accepts changes to the language core, capability host, or workflow
+engine only when the security boundary remains explicit.
 
 - Do not register filesystem, subprocess, raw socket, or HTTP server modules
   in `octoscript-core`.
 - Add effects as reviewed tool adapters in `octoscript-capabilities` with limits,
   audit coverage, and a documented containment strategy.
-- Preserve Makepad provenance. Changes below `vendor/makepad/` need an entry
-  in `vendor/makepad/PATCHES.md` and an upstream-sync note.
+- Do not patch the VM here. `makepad-script` is a pinned git dependency on the
+  `octoscript` branch of `OctoSense-org/makepad`; VM changes land there first
+  and reach this repository through a rev bump (see `UPSTREAM.md`).
 - Keep new language behavior in an executable fixture or regression test.
 
 Before opening a change, run the checks in `docs/development.md`.
