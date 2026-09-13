@@ -6,7 +6,8 @@ and keeps UI support optional rather than making UI the language boundary.
 
 ## Current baseline
 
-- A standalone, vendored VM and parser with upstream provenance.
+- A standalone VM and parser with upstream provenance, consumed as a pinned
+  git dependency on the `octoscript` branch of `OctoSense-org/makepad`.
 - An effect-free, bounded canonical-language preflight with structured
   diagnostics for generated source and editor tooling, plus token-aware
   lowering of canonical newline statement boundaries for the inherited VM.
@@ -235,7 +236,7 @@ and keeps UI support optional rather than making UI the language boundary.
 - A small `octoscript` CLI for local evaluation and the workflow example.
 
 No ambient filesystem, subprocess, raw socket, HTTP client/server, or Makepad
-platform/debug module is source-reachable by default. The vendored VM bootstrap
+platform/debug module is source-reachable by default. The inherited VM bootstrap
 retains compatibility objects internally, but `Runtime` masks their source
 entry points before either canonical or compatibility evaluation. The optional
 fixed-file and fixed-endpoint catalogs are explicit, bounded tools rather than
@@ -757,10 +758,11 @@ both keys with JSON `null`. See [editor workflow-data projection](docs/workflow-
   declaration symbols, and bounded same-document lexical navigation, hover, and
   highlights plus lexical completion and version-bound guarded rename for open
   editor documents.
-- `vendor/makepad`: provenance-preserving compatibility import.
+- `makepad-script` (git dependency, `OctoSense-org/makepad` branch
+  `octoscript`): the inherited VM and parser; see `UPSTREAM.md`.
 
 See [SECURITY.md](SECURITY.md) for the current threat model and [UPSTREAM.md](UPSTREAM.md)
-for the import boundary. The [worker protocol](docs/worker-protocol.md)
+for the dependency boundary. The [worker protocol](docs/worker-protocol.md)
 defines the handoff to contained adapters. The [host tool catalog](docs/tool-catalog.md)
 defines safe discovery for an LLM orchestrator. [JSON tool contracts](docs/schema-contracts.md)
 define the executable structured-data boundary. [External tools](docs/external-tools.md)

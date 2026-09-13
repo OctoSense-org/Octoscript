@@ -34,7 +34,7 @@ runtime. It does not execute through `octoscript-cli`, render widgets, install
 `mod.prelude.widgets`, inject `ui`, or provide Makepad event-loop semantics.
 Use it only with a Makepad UI host that supplies those bindings. The fixture
 also is not an assertion of compatibility with every upstream Octoscript feature;
-the vendored VM is intentionally smaller than a full Makepad checkout. In
+the inherited VM is intentionally smaller than a full Makepad checkout. In
 particular, the standalone compatibility check rejects Makepad `@(index)`
 host-value tokens because it does not accept a host value table.
 

@@ -313,6 +313,7 @@ dependencies = [
 [[package]]
 name = "makepad-error-log"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-micro-serde",
 ]
@@ -320,6 +321,7 @@ dependencies = [
 [[package]]
 name = "makepad-html"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-live-id",
 ]
@@ -327,6 +329,7 @@ dependencies = [
 [[package]]
 name = "makepad-live-id"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-live-id-macros",
 ]
@@ -334,6 +337,7 @@ dependencies = [
 [[package]]
 name = "makepad-live-id-macros"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-micro-proc-macro",
 ]
@@ -341,6 +345,7 @@ dependencies = [
 [[package]]
 name = "makepad-math"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-micro-serde",
 ]
@@ -348,10 +353,12 @@ dependencies = [
 [[package]]
 name = "makepad-micro-proc-macro"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 
 [[package]]
 name = "makepad-micro-serde"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-live-id",
  "makepad-micro-serde-derive",
@@ -360,6 +367,7 @@ dependencies = [
 [[package]]
 name = "makepad-micro-serde-derive"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-micro-proc-macro",
 ]
@@ -367,10 +375,12 @@ dependencies = [
 [[package]]
 name = "makepad-regex"
 version = "0.1.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 
 [[package]]
 name = "makepad-script"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-error-log",
  "makepad-html",
@@ -378,21 +388,164 @@ dependencies = [
  "makepad-math",
  "makepad-regex",
  "makepad-script-derive",
+ "makepad-stitch",
  "smallvec",
 ]
 
 [[package]]
 name = "makepad-script-derive"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 dependencies = [
  "makepad-micro-proc-macro",
 ]
+
+[[package]]
+name = "makepad-stitch"
+version = "0.1.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 
 [[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "octoscript-capabilities"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "getrandom 0.3.4",
+ "makepad-script",
+ "octoscript-core",
+ "octoscript-protocol",
+ "octoscript-schema",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+ "ureq",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-core"
+version = "0.1.0"
+dependencies = [
+ "makepad-script",
+ "octoscript-ui-l0",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-fuzz"
+version = "0.0.0"
+dependencies = [
+ "libfuzzer-sys",
+ "lsp-server",
+ "lsp-types",
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-protocol",
+ "octoscript-sandbox",
+ "octoscript-schema",
+ "octoscript-storage",
+ "octoscript-worker",
+ "octoscript-workflow",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-linux-project-quota"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "linux-raw-sys",
+]
+
+[[package]]
+name = "octoscript-linux-seccomp"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "linux-raw-sys",
+]
+
+[[package]]
+name = "octoscript-protocol"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "constant_time_eq",
+ "serde",
+ "serde_json",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-sandbox"
+version = "0.1.0"
+dependencies = [
+ "close_fds",
+ "landlock",
+ "linux-raw-sys",
+ "octoscript-linux-project-quota",
+ "octoscript-linux-seccomp",
+ "octoscript-protocol",
+ "rustix",
+]
+
+[[package]]
+name = "octoscript-schema"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-storage"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "blake3",
+ "serde",
+ "serde_json",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-ui-l0"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-worker"
+version = "0.1.0"
+dependencies = [
+ "octoscript-protocol",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-workflow"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-protocol",
+ "octoscript-schema",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "once_cell"
@@ -567,141 +720,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 [[package]]
 name = "smallvec"
 version = "1.15.1"
-
-[[package]]
-name = "octoscript-capabilities"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "getrandom 0.3.4",
- "makepad-script",
- "serde",
- "serde_json",
- "octoscript-core",
- "octoscript-protocol",
- "octoscript-schema",
- "octoscript-storage",
- "ureq",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-core"
-version = "0.1.0"
-dependencies = [
- "makepad-script",
- "serde_json",
- "octoscript-ui-l0",
-]
-
-[[package]]
-name = "octoscript-fuzz"
-version = "0.0.0"
-dependencies = [
- "libfuzzer-sys",
- "lsp-server",
- "lsp-types",
- "serde_json",
- "octoscript-capabilities",
- "octoscript-core",
- "octoscript-protocol",
- "octoscript-sandbox",
- "octoscript-schema",
- "octoscript-storage",
- "octoscript-worker",
- "octoscript-workflow",
-]
-
-[[package]]
-name = "octoscript-linux-project-quota"
-version = "0.1.0"
-dependencies = [
- "libc",
- "linux-raw-sys",
-]
-
-[[package]]
-name = "octoscript-linux-seccomp"
-version = "0.1.0"
-dependencies = [
- "libc",
- "linux-raw-sys",
-]
-
-[[package]]
-name = "octoscript-protocol"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "constant_time_eq",
- "serde",
- "serde_json",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-sandbox"
-version = "0.1.0"
-dependencies = [
- "close_fds",
- "landlock",
- "linux-raw-sys",
- "rustix",
- "octoscript-linux-project-quota",
- "octoscript-linux-seccomp",
- "octoscript-protocol",
-]
-
-[[package]]
-name = "octoscript-schema"
-version = "0.1.0"
-dependencies = [
- "serde_json",
-]
-
-[[package]]
-name = "octoscript-storage"
-version = "0.1.0"
-dependencies = [
- "base64",
- "blake3",
- "serde",
- "serde_json",
- "subtle",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-ui-l0"
-version = "0.1.0"
-dependencies = [
- "serde_json",
-]
-
-[[package]]
-name = "octoscript-worker"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "octoscript-protocol",
- "octoscript-storage",
- "zeroize",
-]
-
-[[package]]
-name = "octoscript-workflow"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "serde",
- "serde_json",
- "octoscript-capabilities",
- "octoscript-core",
- "octoscript-protocol",
- "octoscript-schema",
- "octoscript-storage",
-]
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=1fdce273bf888239079754a1834734635eaed34f#1fdce273bf888239079754a1834734635eaed34f"
 
 [[package]]
 name = "subtle"
