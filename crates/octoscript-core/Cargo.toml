@@ -11,5 +11,5 @@ workspace = true
 
 [dependencies]
 octoscript-ui-l0 = { path = "../octoscript-ui-l0" }
-makepad-script = { git = "https://github.com/OctoSense-org/makepad.git", rev = "703c00acd738c1762b5db581d3dcc359bfb97d4a" }
+makepad-script = { git = "https://github.com/OctoSense-org/makepad.git", rev = "3090964f9eba54c9384c0b55d2b4869c80305f7b" }
 serde_json = "1.0.150"
