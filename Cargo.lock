@@ -376,6 +376,7 @@ dependencies = [
 [[package]]
 name = "makepad-error-log"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-micro-serde",
 ]
@@ -383,6 +384,7 @@ dependencies = [
 [[package]]
 name = "makepad-html"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-live-id",
 ]
@@ -390,6 +392,7 @@ dependencies = [
 [[package]]
 name = "makepad-live-id"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-live-id-macros",
 ]
@@ -397,6 +400,7 @@ dependencies = [
 [[package]]
 name = "makepad-live-id-macros"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-micro-proc-macro",
 ]
@@ -404,6 +408,7 @@ dependencies = [
 [[package]]
 name = "makepad-math"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-micro-serde",
 ]
@@ -411,10 +416,12 @@ dependencies = [
 [[package]]
 name = "makepad-micro-proc-macro"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 
 [[package]]
 name = "makepad-micro-serde"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-live-id",
  "makepad-micro-serde-derive",
@@ -423,6 +430,7 @@ dependencies = [
 [[package]]
 name = "makepad-micro-serde-derive"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-micro-proc-macro",
 ]
@@ -430,10 +438,12 @@ dependencies = [
 [[package]]
 name = "makepad-regex"
 version = "0.1.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 
 [[package]]
 name = "makepad-script"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-error-log",
  "makepad-html",
@@ -441,21 +451,188 @@ dependencies = [
  "makepad-math",
  "makepad-regex",
  "makepad-script-derive",
+ "makepad-stitch",
  "smallvec 1.15.1",
 ]
 
 [[package]]
 name = "makepad-script-derive"
 version = "1.0.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 dependencies = [
  "makepad-micro-proc-macro",
 ]
+
+[[package]]
+name = "makepad-stitch"
+version = "0.1.0"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 
 [[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "octoscript-capabilities"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "getrandom 0.3.4",
+ "keyring",
+ "makepad-script",
+ "octoscript-core",
+ "octoscript-protocol",
+ "octoscript-sandbox",
+ "octoscript-schema",
+ "octoscript-storage",
+ "octoscript-worker",
+ "serde",
+ "serde_json",
+ "ureq",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-cli"
+version = "0.1.0"
+dependencies = [
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-workflow",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-core"
+version = "0.1.0"
+dependencies = [
+ "makepad-script",
+ "octoscript-ui-l0",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-linux-project-quota"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "linux-raw-sys",
+]
+
+[[package]]
+name = "octoscript-linux-seccomp"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "linux-raw-sys",
+]
+
+[[package]]
+name = "octoscript-lsp"
+version = "0.1.0"
+dependencies = [
+ "lsp-server",
+ "lsp-types",
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-schema",
+ "octoscript-workflow",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-media-host"
+version = "0.1.0"
+dependencies = [
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-workflow",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-protocol"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "constant_time_eq",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-sandbox"
+version = "0.1.0"
+dependencies = [
+ "close_fds",
+ "landlock",
+ "linux-raw-sys",
+ "octoscript-linux-project-quota",
+ "octoscript-linux-seccomp",
+ "octoscript-protocol",
+ "rustix",
+]
+
+[[package]]
+name = "octoscript-schema"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-storage"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "blake3",
+ "keyring",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "subtle",
+ "ureq",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-ui-l0"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "serde_json",
+]
+
+[[package]]
+name = "octoscript-worker"
+version = "0.1.0"
+dependencies = [
+ "octoscript-protocol",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+ "zeroize",
+]
+
+[[package]]
+name = "octoscript-workflow"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "getrandom 0.3.4",
+ "octoscript-capabilities",
+ "octoscript-core",
+ "octoscript-protocol",
+ "octoscript-sandbox",
+ "octoscript-schema",
+ "octoscript-storage",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "once_cell"
@@ -691,172 +868,13 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 [[package]]
 name = "smallvec"
 version = "1.15.1"
+source = "git+https://github.com/OctoSense-org/makepad.git?rev=3090964f9eba54c9384c0b55d2b4869c80305f7b#3090964f9eba54c9384c0b55d2b4869c80305f7b"
 
 [[package]]
 name = "smallvec"
 version = "1.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
-
-[[package]]
-name = "splash-capabilities"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "getrandom 0.3.4",
- "keyring",
- "makepad-script",
- "serde",
- "serde_json",
- "splash-core",
- "splash-protocol",
- "splash-sandbox",
- "splash-schema",
- "splash-storage",
- "splash-worker",
- "ureq",
- "zeroize",
-]
-
-[[package]]
-name = "splash-cli"
-version = "0.1.0"
-dependencies = [
- "serde_json",
- "splash-capabilities",
- "splash-core",
- "splash-workflow",
-]
-
-[[package]]
-name = "splash-core"
-version = "0.1.0"
-dependencies = [
- "makepad-script",
- "serde_json",
- "splash-ui-l0",
-]
-
-[[package]]
-name = "splash-linux-project-quota"
-version = "0.1.0"
-dependencies = [
- "libc",
- "linux-raw-sys",
-]
-
-[[package]]
-name = "splash-linux-seccomp"
-version = "0.1.0"
-dependencies = [
- "libc",
- "linux-raw-sys",
-]
-
-[[package]]
-name = "splash-lsp"
-version = "0.1.0"
-dependencies = [
- "lsp-server",
- "lsp-types",
- "serde_json",
- "splash-capabilities",
- "splash-core",
- "splash-schema",
- "splash-workflow",
-]
-
-[[package]]
-name = "splash-media-host"
-version = "0.1.0"
-dependencies = [
- "serde_json",
- "splash-capabilities",
- "splash-core",
- "splash-workflow",
-]
-
-[[package]]
-name = "splash-protocol"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "constant_time_eq",
- "serde",
- "serde_json",
- "splash-storage",
- "zeroize",
-]
-
-[[package]]
-name = "splash-sandbox"
-version = "0.1.0"
-dependencies = [
- "close_fds",
- "landlock",
- "linux-raw-sys",
- "rustix",
- "splash-linux-project-quota",
- "splash-linux-seccomp",
- "splash-protocol",
-]
-
-[[package]]
-name = "splash-schema"
-version = "0.1.0"
-dependencies = [
- "serde_json",
-]
-
-[[package]]
-name = "splash-storage"
-version = "0.1.0"
-dependencies = [
- "base64",
- "blake3",
- "keyring",
- "rusqlite",
- "serde",
- "serde_json",
- "subtle",
- "ureq",
- "zeroize",
-]
-
-[[package]]
-name = "splash-ui-l0"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "serde_json",
-]
-
-[[package]]
-name = "splash-worker"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "splash-protocol",
- "splash-storage",
- "zeroize",
-]
-
-[[package]]
-name = "splash-workflow"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "getrandom 0.3.4",
- "serde",
- "serde_json",
- "splash-capabilities",
- "splash-core",
- "splash-protocol",
- "splash-sandbox",
- "splash-schema",
- "splash-storage",
-]
 
 [[package]]
 name = "sqlite-wasm-rs"
