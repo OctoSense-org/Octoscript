@@ -1,15 +1,15 @@
-# Authoring Splash as an LLM
+# Authoring Octoscript as an LLM
 
-You were trained on an enormous amount of JavaScript and Python. **Splash is
+You were trained on an enormous amount of JavaScript and Python. **Octoscript is
 neither.** Under load you will reach for their idioms by reflex, and the result
 either fails to parse or fails to run. This page is the antidote: every rule
-below was *measured* against `splash check` (syntax) and the runtime (semantics)
+below was *measured* against `octoscript check` (syntax) and the runtime (semantics)
 on the canonical **workflow profile** — not inferred from the grammar. The exact
 diagnostic the tools emit is quoted so you recognize it in the check→fix loop.
 
 > This is the workflow/tool-orchestration profile. The generated-UI (card)
 > profile is a sibling with **different** rules — do not carry rules between
-> them. When unsure, run `splash check <file>`; it is effect-free and authoritative.
+> them. When unsure, run `octoscript check <file>`; it is effect-free and authoritative.
 
 ## Rule 0 — the one that bites hardest: blocks are newline-delimited
 
@@ -33,19 +33,19 @@ if x == 1 { x = 10; }
 ```
 
 This applies to every block: `fn`, `if`, `elif`, `else`, `for`, `while`, `loop`,
-`try`, `catch`. It is the single most common JS reflex that breaks Splash.
+`try`, `catch`. It is the single most common JS reflex that breaks Octoscript.
 
 ## Rule 1 — syntax the parser rejects outright
 
-Each of these stops at `splash check` with the quoted message.
+Each of these stops at `octoscript check` with the quoted message.
 
 | You will write (JS/Python) | Diagnostic | Write instead |
 | --- | --- | --- |
-| `cond ? a : b` | ``operator `?` is not part of the canonical Splash profile`` | `if` is an expression: `let x = if cond { a } else { b }` |
+| `cond ? a : b` | ``operator `?` is not part of the canonical Octoscript profile`` | `if` is an expression: `let x = if cond { a } else { b }` |
 | `if(cond, a, b)` (ternary-as-call) | `expected ) after a parenthesized expression` | same — use an `if` expression |
-| `[...a, b]` | ``operator `...` is not part of the canonical Splash profile`` | `array.concat(a, [b])`, or `array.push(a, b)` |
-| `x => x + 1` | ``operator `=>` is not part of the canonical Splash profile`` | `|x| x + 1` (bar-delimited lambda) |
-| `a === b` / `a !== b` | ``operator `===` is not part of the canonical Splash profile`` | `a == b` / `a != b` |
+| `[...a, b]` | ``operator `...` is not part of the canonical Octoscript profile`` | `array.concat(a, [b])`, or `array.push(a, b)` |
+| `x => x + 1` | ``operator `=>` is not part of the canonical Octoscript profile`` | `|x| x + 1` (bar-delimited lambda) |
+| `a === b` / `a !== b` | ``operator `===` is not part of the canonical Octoscript profile`` | `a == b` / `a != b` |
 | `` `hi ${x}` `` (template) | `unsupported character ...` | `"hi " + x` (string `+`) |
 | `else if` (two words) | `expected a newline or ; after a statement` | `elif` |
 | `const x` / `var x` | rejected | `let x` (reassign with `=`, `+=`, `-=`) |
@@ -58,7 +58,7 @@ Each of these stops at `splash check` with the quoted message.
 
 ## Rule 2 — parses, but dies at runtime (the sneakier class)
 
-`splash check` will **not** catch these — they are syntactically valid. They
+`octoscript check` will **not** catch these — they are syntactically valid. They
 fail only when evaluated, so they surface at execution with a runtime message.
 The mental model to fix them is at the bottom.
 
@@ -105,9 +105,9 @@ promise). Everything else is a module function.
 Never ship generated source unchecked; the host will reject it anyway.
 
 ```sh
-splash check <file.splash>          # JSON diagnostics with line + column, nonzero on any violation
-splash workflow-review <draft.json> # per-step syntax status for a multi-step plan
-splash format <file.splash>         # canonical spelling
+octoscript check <file.octoscript>          # JSON diagnostics with line + column, nonzero on any violation
+octoscript workflow-review <draft.json> # per-step syntax status for a multi-step plan
+octoscript format <file.octoscript>         # canonical spelling
 ```
 
 Run `check`, read each `line`/`column`/`message`, fix it, regenerate, re-check

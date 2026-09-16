@@ -1,12 +1,15 @@
-Splash contains a vendored compatibility core derived from Makepad.
+Octoscript ships a compatibility core derived from Makepad. It is consumed as
+the `makepad-script` git dependency pinned in `crates/octoscript-core/Cargo.toml`
+and `crates/octoscript-capabilities/Cargo.toml`, taken from the `octoscript`
+branch of https://github.com/OctoSense-org/makepad.
 
 Upstream project: https://github.com/makepad/makepad
-Upstream revision: 4f9ce7a8bb3fd19e5c61dcf13edd2e6d4a04cefc
-Imported paths: platform/script and the required leaf dependencies under libs/.
+Original import revision: 4f9ce7a8bb3fd19e5c61dcf13edd2e6d4a04cefc
+Shipped paths: platform/script and the leaf dependencies it pulls under libs/.
 Copyright (c) 2023 Makepad B.V.
 License: MIT (see LICENSE). Individual imported crates may additionally be
 licensed under Apache-2.0 as declared in their manifests.
 
-The vendored copy of smallvec is Copyright (c) The Servo Project Developers
-and is dual licensed under MIT OR Apache-2.0. Its license texts are retained
-under vendor/makepad/libs/smallvec/.
+The copy of smallvec carried by that dependency is Copyright (c) The Servo
+Project Developers and is dual licensed under MIT OR Apache-2.0. Its license
+texts are retained under libs/smallvec/ in the dependency's source tree.

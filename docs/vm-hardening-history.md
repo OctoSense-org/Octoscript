@@ -1,0 +1,168 @@
+# VM hardening history
+
+The changes described below were Octoscript's local patches to its formerly
+vendored copy of the Makepad VM (`vendor/makepad/PATCHES.md`). They were ported
+to the `octoscript` branch of OctoSense-org/makepad on 2026-09-13 (fork PR #1)
+and no longer live in this repository; Octoscript consumes them through the
+pinned `makepad-script` git dependency described in `UPSTREAM.md`. The text is
+kept as written, as a record of what was changed and why. The upstream-sync
+notes it contains refer to the old vendoring workflow and are historical.
+
+## `platform/script`: language review fixes (#9–#18)
+
+The September 2026 review fixes implement the contracts published in
+`docs/grammar.md`. `equality.rs` replaces recursive structural comparison with
+a cycle-aware worklist, meters edges, pairs, typed-array elements and string
+chunks, and bounds temporary storage. Equality opcodes charge instruction fuel,
+check the hard deadline, and bail on native-work exhaustion. NaN remains unequal
+to itself. Raw host comparison is iterative but does not consume VM fuel.
+
+Uncaught VM errors now drain diagnostics and bail before another instruction
+can run. Active `try` handlers still recover normally. A host-controlled
+`allow_debug_output` flag preserves raw Makepad debugging by default; Octoscript's
+standalone runtime disables it, including compatibility evaluation. LOG is
+rejected and incidental VM error prints are removed.
+
+The parser retains the logical operator in streaming checkpoint state, closes
+short-circuit jumps according to precedence, and gives comparisons higher
+precedence than equality. `!` consistently negates truth conversion. Numeric
+string conversion handles inline and heap strings alike and produces NaN for
+invalid text. Array opcode reads and writes validate index type, sign,
+integrality and representable range before touching storage. Existing limits
+still govern sparse growth. Updating an untracked object field now preserves
+its original insertion order, matching the tracked-object path; the stricter
+uncaught-error behavior exposed this existing contract violation.
+
+Conditional block-tail lowering, strict JSON materialization, numeric boundary
+checks, and aggregate UI realization work limits live in Octoscript-owned crates.
+Regressions cover cycles and shared DAGs in a timed child process, fuel,
+precedence and effects, streaming appends, error recovery, invalid writes,
+numeric storage variants, JSON boundaries, and empty nested UI expansion.
+
+**Upstream sync:** reapply or retire the VM changes as a unit when importing
+Makepad. Preserve the published Octoscript contracts and run both Octoscript's regression
+suite and the explicit `makepad-script` tests, especially streaming precedence
+and `try/catch` recovery. Keep the standalone logging opt-out host-controlled;
+do not add capabilities to compensate for removed output paths.
+
+## `regex/src/utf8.rs`: Clippy-compatible iterator entry
+
+The upstream iterator wrapped an inner non-terminating loop in `while let`.
+Every inner path either returned an item or continued the inner loop, so the
+outer loop could never advance to a second iteration. Octoscript replaces that
+outer loop with `self.range_stack.pop()?`, preserving the single-pop behavior
+while satisfying Clippy's `never_loop` denial on Rust 1.95.
+
+## `platform/script`: canonical `try/catch` and cross-call unwinding
+
+Octoscript Grammar v0.2 publishes `try protected catch fallback`. The upstream
+parser already emits `TRY_*` opcodes for the compatibility form
+`try protected fallback [ok success]`, so Octoscript keeps those opcodes and makes
+`catch` a one-shot contextual separator before the fallback. It is not a
+global keyword: an identifier named `catch` remains valid, including as the
+first fallback token. Parser checkpoint state retains whether the separator
+was already consumed so append-only streaming cannot reinterpret a later
+identifier as another separator. The legacy catch-less form remains available
+only through the trusted compatibility entry point. Legacy source that used a
+bare identifier named `catch` as its fallback must parenthesize that identifier
+to disambiguate it from the v0.2 separator.
+
+Canonical block branches retain their final expression as the `try` value,
+including when canonical source terminates that expression with a newline. The
+parser removes the inherited `pop-to-me` marker before recomputing jump
+distances. The VM's `TRY_ERR` success path uses that encoded relative distance
+directly; the upstream extra increment skipped an enclosing opcode such as
+`let` when no optional `ok` branch existed. The parser now encodes the extra
+guard skip only when legacy `ok` is present. These fixes let both protected and
+fallback values participate safely in larger expressions without changing the
+legacy `ok` control paths.
+
+Upstream error handling checks only the current call frame for a try frame.
+Octoscript searches active call frames, unwinds failed script calls to the nearest
+try-owning frame, restores that frame's instruction body, and then applies the
+existing try-frame cleanup and jump. Hard VM bails remain outside this path.
+
+Loop back-edges now discard iteration-local try frames, operand values,
+temporary scopes, and call-builder state before starting the next iteration.
+The active loop frame and any enclosing try frame remain intact. This matches
+the existing break cleanup and prevents `continue` from leaving an abandoned
+handler that could catch a later iteration's error and re-enter an effectful
+fallback. Hard time-budget bails drain their diagnostic before unwinding, as
+instruction-limit bails already did, and malformed `OK_END` bytecode now bails
+when no try frame exists.
+
+The focused regressions cover legacy syntax, block and expression branches,
+nested and cross-function recovery, a contextual `catch` identifier, parser
+checkpoint restoration, loop control-flow cleanup, and uncatchable instruction
+and hard-time limits.
+Capability and workflow tests separately verify that recovery cannot erase an
+audit, refund a call, widen a lease, or bypass a dataflow output contract.
+
+## `platform/script`: re-entrant VM and raw-pointer hardening
+
+The inherited interpreter cached a raw pointer into a body's opcode vector
+across native calls. Native handlers receive `&mut ScriptVm` and can re-enter
+evaluation, including replacing the current body's parser, which invalidates
+that pointer. Octoscript copies each opcode through a scoped `RefCell` borrow
+instead; the borrow ends before dispatch, so re-entrant host code remains
+supported without retaining a dangling pointer.
+
+`ScriptThreads` now validates externally selected thread indexes before it
+updates its cached raw pointer, and its accessors use release-mode assertions
+instead of debug-only null checks. Invalid host input therefore fails
+deterministically rather than forming or dereferencing an out-of-bounds
+pointer. `ScriptHandleGc` downcasts now use `Any::type_id`, so a handle
+implementation cannot forge a type match by overriding a trait method.
+
+## `platform/script`: malformed field-assignment parser bounds
+
+The inherited assignment rewrite walks the emitted opcode stream in reverse
+pairs. A malformed partial field assignment can leave a trailing one-opcode
+chunk, but the loop indexed both pair elements unconditionally. Octoscript stops
+at that incomplete chunk so the normal parser error path rejects the source
+instead of panicking during compatibility preflight.
+
+Upstream-sync note: this local safety patch is carried against the pinned
+`makepad/makepad dev` import and must be reapplied or retired when that import
+is next synchronized.
+
+## `platform/script`: malformed prototype-field assignment metadata
+
+The `:` prototype-field rewrite inserted paired opcodes directly into the
+opcode stream and its source-map sidecar. Malformed field chains can reach that
+rewrite with a missing synthetic source-map entry, making the second sidecar
+insert out of bounds. Octoscript validates that the chain begins with an identifier
+and inserts through one helper that restores missing entries as synthetic
+metadata before mutating both vectors. The parser now returns its normal syntax
+diagnostic and retains opcode/source-map lockstep for the minimized fuzz input.
+
+Upstream-sync note: this local safety patch is carried against the pinned
+`makepad/makepad dev` import and must be reapplied or retired when that import
+is next synchronized.
+
+## `platform/script`: malformed numeric-boundary tokenizer state
+
+The inherited tokenizer ignores underscores inside numeric literals, but it
+moved to whitespace while retaining the buffered number. A following
+separator, including Octoscript's terminal preflight marker, then reached
+`emit_separator` with stale text and panicked. Octoscript retains the numeric state
+across the separator so later digits remain part of the same literal and a
+separator flushes it through the normal number path. Focused tokenizer and
+compatibility-preflight regressions cover integer, fractional, exponent, and
+terminal-marker paths.
+
+Upstream-sync note: this local safety patch is carried against the pinned
+`makepad/makepad dev` import and must be reapplied or retired when that import
+is next synchronized.
+
+## `platform/script`: UTF-8-safe suggestion previews
+
+The inherited suggestion formatter truncated inline and heap strings with a
+fixed byte slice. A valid multibyte character crossing that byte offset caused
+a panic while formatting an otherwise recoverable script error. Octoscript now
+truncates previews at character boundaries and covers the exact boundary case
+with a regression test.
+
+Upstream-sync note: this local safety patch is carried against the pinned
+`makepad/makepad dev` import and must be reapplied or retired when that import
+is next synchronized.
