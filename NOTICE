@@ -1,3 +1,11 @@
+Octoscript
+Copyright 2026 The OctoSense Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party code
+----------------
+
 Octoscript ships a compatibility core derived from Makepad. It is consumed as
 the `makepad-script` git dependency pinned in `crates/octoscript-core/Cargo.toml`
 and `crates/octoscript-capabilities/Cargo.toml`, taken from the `octoscript`
@@ -7,8 +15,10 @@ Upstream project: https://github.com/makepad/makepad
 Original import revision: 4f9ce7a8bb3fd19e5c61dcf13edd2e6d4a04cefc
 Shipped paths: platform/script and the leaf dependencies it pulls under libs/.
 Copyright (c) 2023 Makepad B.V.
-License: MIT (see LICENSE). Individual imported crates may additionally be
-licensed under Apache-2.0 as declared in their manifests.
+License: MIT (see LICENSES/Makepad-MIT.txt). Individual imported crates may
+additionally be licensed under Apache-2.0 as declared in their manifests.
+The Makepad-derived portions remain under their original MIT license; they are
+not relicensed by this project.
 
 The copy of smallvec carried by that dependency is Copyright (c) The Servo
 Project Developers and is dual licensed under MIT OR Apache-2.0. Its license
