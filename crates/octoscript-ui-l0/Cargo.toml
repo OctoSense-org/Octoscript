@@ -3,7 +3,7 @@ name = "octoscript-ui-l0"
 version = "0.1.0"
 edition = "2021"
 description = "UI Profile Level 0: check, realize and dispatch LLM-authored Octoscript cards"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 
 # No VM dependency: hosts can use the profile across Makepad lineages.
 [dependencies]
