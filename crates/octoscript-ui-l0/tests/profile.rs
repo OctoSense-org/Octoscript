@@ -25,10 +25,19 @@ fn l0_migration_conversion_binding_tracks_amount_pair_and_direction() {
         let data = serde_json::json!({"amount": amount, "from":"c", "to":"f", "dir": direction});
         let realized = octoscript_ui_l0::realize(card, &data, Default::default());
         let lowered = octoscript_ui_l0::kit::lower(realized.complete_root().unwrap());
-        assert!(lowered.contains(&format!("sys.convert({amount}, \"c\", \"f\", \"{direction}\")")), "{lowered}\n{:?}", realized.complete_root().unwrap());
+        assert!(
+            lowered.contains(&format!(
+                "sys.convert({amount}, \"c\", \"f\", \"{direction}\")"
+            )),
+            "{lowered}\n{:?}",
+            realized.complete_root().unwrap()
+        );
     }
     for changed in ["amount", "from", "to", "dir"] {
-        assert_eq!(octoscript_ui_l0::stale_sources(card, &[changed]), vec!["result"]);
+        assert_eq!(
+            octoscript_ui_l0::stale_sources(card, &[changed]),
+            vec!["result"]
+        );
     }
 }
 
@@ -36,12 +45,24 @@ fn l0_migration_conversion_binding_tracks_amount_pair_and_direction() {
 fn l0_migration_conversion_rejects_undeclared_results_and_executable_arguments() {
     let card = "source result sys.convert(amount: 20, from: \"c\", to: \"f\", fields: [value])\nview root TextHero(value: result.value)";
     assert!(check_ui_l0_named("convert", card).valid);
-    assert!(!check_ui_l0_named("convert", &card.replace("result.value)", "result.value + 1)")).valid);
+    assert!(
+        !check_ui_l0_named(
+            "convert",
+            &card.replace("result.value)", "result.value + 1)")
+        )
+        .valid
+    );
     assert!(!check_ui_l0_named("convert", &card.replace("result.value)", "result.factor)")).valid);
     for bad in ["1 + 1", "sys.navsecs(1)", "NaN", "inf"] {
         let binding = octoscript_ui_l0::SourceBinding {
-            helper: "sys.convert".into(), field: "value".into(), nested: vec![],
-            args: vec![("amount".into(), bad.into()), ("from".into(), "c".into()), ("to".into(), "f".into())],
+            helper: "sys.convert".into(),
+            field: "value".into(),
+            nested: vec![],
+            args: vec![
+                ("amount".into(), bad.into()),
+                ("from".into(), "c".into()),
+                ("to".into(), "f".into()),
+            ],
         };
         assert_eq!(octoscript_ui_l0::makepad::vm_call(&binding), None, "{bad}");
     }
@@ -56,14 +77,25 @@ fn l0_migration_city_difference_is_l0_and_unit_changes_rebind_the_source() {
     assert!(checked.valid, "{:?}", checked.diagnostics);
     assert_eq!(checked.level, Level::L0);
     for unit in ["c", "f"] {
-        let data = serde_json::json!({"units":unit,"picks":[{"name":"Test","temp":20,"feels_delta":2}]});
+        let data =
+            serde_json::json!({"units":unit,"picks":[{"name":"Test","temp":20,"feels_delta":2}]});
         let realized = octoscript_ui_l0::realize(card, &data, Default::default());
         let lowered = octoscript_ui_l0::kit::lower(realized.complete_root().unwrap());
-        assert!(lowered.contains(&format!("sys.cities(0, \"feels_delta\", \"{unit}\")")), "{lowered}");
-        assert!(lowered.contains(&format!("sys.cities(0, \"temp\", \"{unit}\")")), "{lowered}");
+        assert!(
+            lowered.contains(&format!("sys.cities(0, \"feels_delta\", \"{unit}\")")),
+            "{lowered}"
+        );
+        assert!(
+            lowered.contains(&format!("sys.cities(0, \"temp\", \"{unit}\")")),
+            "{lowered}"
+        );
     }
-    assert_eq!(octoscript_ui_l0::stale_sources(card, &["units"]), vec!["picks"]);
-    let empty = octoscript_ui_l0::realize(card, &serde_json::json!({"picks":[]}), Default::default());
+    assert_eq!(
+        octoscript_ui_l0::stale_sources(card, &["units"]),
+        vec!["picks"]
+    );
+    let empty =
+        octoscript_ui_l0::realize(card, &serde_json::json!({"picks":[]}), Default::default());
     assert!(empty.complete_root().is_ok());
 }
 
@@ -501,7 +533,11 @@ fn weather_data() -> serde_json::Value {
     })
 }
 
-fn find<'a>(node: &'a octoscript_ui_l0::UiNode, kind: &str, out: &mut Vec<&'a octoscript_ui_l0::UiNode>) {
+fn find<'a>(
+    node: &'a octoscript_ui_l0::UiNode,
+    kind: &str,
+    out: &mut Vec<&'a octoscript_ui_l0::UiNode>,
+) {
     if node.kind == kind {
         out.push(node);
     }
@@ -788,7 +824,8 @@ fn local_state_is_per_instance() {
     let mut store = octoscript_ui_l0::InstanceStore::default();
     let data = two_rows_data();
 
-    let first = octoscript_ui_l0::realize_with_state(TWO_ROWS, &data, &store, RealizeLimits::default());
+    let first =
+        octoscript_ui_l0::realize_with_state(TWO_ROWS, &data, &store, RealizeLimits::default());
     let root = first.root.expect("root");
     let mut rows = Vec::new();
     find(&root, "Row", &mut rows);
@@ -824,7 +861,8 @@ fn local_state_is_per_instance() {
 fn a_schema_change_resets_instance_state() {
     let mut store = octoscript_ui_l0::InstanceStore::default();
     let data = two_rows_data();
-    let first = octoscript_ui_l0::realize_with_state(TWO_ROWS, &data, &store, RealizeLimits::default());
+    let first =
+        octoscript_ui_l0::realize_with_state(TWO_ROWS, &data, &store, RealizeLimits::default());
     let mut rows = Vec::new();
     let first_root = first.root.unwrap();
     find(&first_root, "Row", &mut rows);
@@ -835,7 +873,8 @@ fn a_schema_change_resets_instance_state() {
         "state open { shape: bool, initial: false }",
         "state open { shape: bool, initial: false }\n  state seen { shape: bool, initial: false }",
     );
-    let after = octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
+    let after =
+        octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
     let mut captions = Vec::new();
     let after_root = after.root.unwrap();
     find(&after_root, "TextCaption", &mut captions);
@@ -867,17 +906,20 @@ fn set_applies_the_event_payload() {
     let mut store = octoscript_ui_l0::InstanceStore::default();
     let data = serde_json::json!({ "items": [{"id":"a","name":"A"},{"id":"b","name":"B"}] });
 
-    let before = octoscript_ui_l0::realize_with_state(SETTER, &data, &store, RealizeLimits::default());
+    let before =
+        octoscript_ui_l0::realize_with_state(SETTER, &data, &store, RealizeLimits::default());
     let root = before.root.unwrap();
     let mut rows = Vec::new();
     find(&root, "Row", &mut rows);
     assert_eq!(rows.len(), 2, "the list should show both items");
 
     let payload = serde_json::json!("b");
-    let applied = octoscript_ui_l0::dispatch_with(SETTER, &mut store, "root", "choose", Some(&payload));
+    let applied =
+        octoscript_ui_l0::dispatch_with(SETTER, &mut store, "root", "choose", Some(&payload));
     assert!(applied, "choose should apply");
 
-    let after = octoscript_ui_l0::realize_with_state(SETTER, &data, &store, RealizeLimits::default());
+    let after =
+        octoscript_ui_l0::realize_with_state(SETTER, &data, &store, RealizeLimits::default());
     let root = after.root.unwrap();
     let mut titles = Vec::new();
     find(&root, "TextTitle", &mut titles);
@@ -929,7 +971,8 @@ fn unmounted_instances_are_pruned() {
     let mut store = octoscript_ui_l0::InstanceStore::default();
     let two = serde_json::json!({ "items": [{"id":"a","name":"A"},{"id":"b","name":"B"}] });
 
-    let report = octoscript_ui_l0::realize_with_state(TWO_ROWS, &two, &store, RealizeLimits::default());
+    let report =
+        octoscript_ui_l0::realize_with_state(TWO_ROWS, &two, &store, RealizeLimits::default());
     let root = report.root.unwrap();
     let mut rows = Vec::new();
     find(&root, "Row", &mut rows);
@@ -940,7 +983,8 @@ fn unmounted_instances_are_pruned() {
 
     // `b` goes away.
     let one = serde_json::json!({ "items": [{"id":"a","name":"A"}] });
-    let report = octoscript_ui_l0::realize_with_state(TWO_ROWS, &one, &store, RealizeLimits::default());
+    let report =
+        octoscript_ui_l0::realize_with_state(TWO_ROWS, &one, &store, RealizeLimits::default());
     store.prune(&report.live_keys);
     assert_eq!(store.len(), 1, "the departed instance's cell is dropped");
 }
@@ -1747,7 +1791,8 @@ view root Panel { for it in items key it.id { Rowy(item: it) } }
         "event flip",
         "state seen { shape: bool, initial: false }\n  event flip",
     );
-    let after = octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
+    let after =
+        octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
     let mut captions = Vec::new();
     let after_root = after.root.unwrap();
     find(&after_root, "TextCaption", &mut captions);
@@ -1794,7 +1839,8 @@ view root Panel { for it in items key it.id { Rowy(item: it) } }
             "event flip { open: toggle }",
             "event flip { open: cycle(.shut, .ajar) }",
         );
-    let after = octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
+    let after =
+        octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
     let mut captions = Vec::new();
     let after_root = after.root.unwrap();
     find(&after_root, "TextCaption", &mut captions);
@@ -1812,7 +1858,8 @@ fn without_keep_a_schema_change_still_resets() {
     // for the two tests above — the opt-in must not have become the default.
     let mut store = octoscript_ui_l0::InstanceStore::default();
     let data = two_rows_data();
-    let first = octoscript_ui_l0::realize_with_state(TWO_ROWS, &data, &store, RealizeLimits::default());
+    let first =
+        octoscript_ui_l0::realize_with_state(TWO_ROWS, &data, &store, RealizeLimits::default());
     let mut rows = Vec::new();
     let first_root = first.root.unwrap();
     find(&first_root, "Row", &mut rows);
@@ -1822,7 +1869,8 @@ fn without_keep_a_schema_change_still_resets() {
         "event flip",
         "state seen { shape: bool, initial: false }\n  event flip",
     );
-    let after = octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
+    let after =
+        octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
     let mut captions = Vec::new();
     let after_root = after.root.unwrap();
     find(&after_root, "TextCaption", &mut captions);
@@ -1981,7 +2029,8 @@ fn state_survives_an_element_inserted_above() {
     let data = serde_json::json!({});
     let mut store = octoscript_ui_l0::InstanceStore::default();
 
-    let first = octoscript_ui_l0::realize_with_state(TOGGLY, &data, &store, RealizeLimits::default());
+    let first =
+        octoscript_ui_l0::realize_with_state(TOGGLY, &data, &store, RealizeLimits::default());
     let root = first.root.unwrap();
     let mut rows = Vec::new();
     find(&root, "Row", &mut rows);
@@ -1995,7 +2044,8 @@ fn state_survives_an_element_inserted_above() {
     );
     assert_ne!(edited, TOGGLY, "the edit must actually apply");
 
-    let after = octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
+    let after =
+        octoscript_ui_l0::realize_with_state(&edited, &data, &store, RealizeLimits::default());
     let after_root = after.root.unwrap();
     let mut rows_after = Vec::new();
     find(&after_root, "Row", &mut rows_after);
@@ -3730,7 +3780,8 @@ fn changing_an_initial_resets_live_component_state() {
 
     let data = serde_json::json!({"items": [{"id": "a", "name": "A"}]});
     let mut store = octoscript_ui_l0::InstanceStore::default();
-    let first = octoscript_ui_l0::realize_with_state(BEFORE, &data, &store, RealizeLimits::default());
+    let first =
+        octoscript_ui_l0::realize_with_state(BEFORE, &data, &store, RealizeLimits::default());
     let root = first.root.unwrap();
     let mut rows = Vec::new();
     find(&root, "Row", &mut rows);
@@ -3743,7 +3794,8 @@ fn changing_an_initial_resets_live_component_state() {
     // Prove the caption is PRESENT before the edit. Without this, a dispatch
     // regression alone satisfies the assertion below and masks the schema
     // regression the test is named for.
-    let live = octoscript_ui_l0::realize_with_state(BEFORE, &data, &store, RealizeLimits::default());
+    let live =
+        octoscript_ui_l0::realize_with_state(BEFORE, &data, &store, RealizeLimits::default());
     let live_root = live.root.unwrap();
     let mut before_caps = Vec::new();
     find(&live_root, "TextCaption", &mut before_caps);
@@ -8947,7 +8999,11 @@ fn a_value_guard_reports_the_call_that_answers_it() {
     assert!(checked.valid, "{:#?}", checked.diagnostics);
 
     let store = octoscript_ui_l0::InstanceStore::default();
-    let bindings = octoscript_ui_l0::guard_bindings(GUARDED, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store);
+    let bindings = octoscript_ui_l0::guard_bindings(
+        GUARDED,
+        &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+        &store,
+    );
 
     // Every field under a `when`, once each — and nothing else. `place.lat` is
     // read by a source ARGUMENT, not by a guard, so it is not asked for
@@ -8975,7 +9031,8 @@ fn a_value_guard_reports_the_call_that_answers_it() {
         .iter()
         .find(|g| g.field == "precip")
         .expect("precip is guarded");
-    let call = octoscript_ui_l0::makepad::vm_call(&precip.binding).expect("this backend answers it");
+    let call =
+        octoscript_ui_l0::makepad::vm_call(&precip.binding).expect("this backend answers it");
     assert_eq!(
         call,
         "sys.weather(sys.geocodenum(\"Kyoto\", \"lat\"), sys.geocodenum(\"Kyoto\", \"lon\"), \
@@ -9003,7 +9060,12 @@ fn a_card_with_no_value_guards_asks_for_nothing() {
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let store = octoscript_ui_l0::InstanceStore::default();
     assert!(
-        octoscript_ui_l0::guard_bindings(PLAIN, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store).is_empty(),
+        octoscript_ui_l0::guard_bindings(
+            PLAIN,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            &store
+        )
+        .is_empty(),
         "`$state` is already injected and `units` is card state — neither is a fetch"
     );
 }
@@ -9023,9 +9085,13 @@ fn a_source_argument_is_not_rounded_to_one_decimal() {
     let checked = check_ui_l0_named("weather", PINNED);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let dsl = octoscript_ui_l0::kit::lower(
-        &realize(PINNED, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
-            .root
-            .expect("realizes"),
+        &realize(
+            PINNED,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            RealizeLimits::default(),
+        )
+        .root
+        .expect("realizes"),
     );
     assert!(
         dsl.contains("sys.weather(37.7749, -122.4194,"),
@@ -9057,9 +9123,13 @@ fn a_text_argument_that_names_another_source_stays_a_call() {
     let checked = check_ui_l0_named("weather", CARD);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let dsl = octoscript_ui_l0::kit::lower(
-        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
-            .root
-            .expect("realizes"),
+        &realize(
+            CARD,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            RealizeLimits::default(),
+        )
+        .root
+        .expect("realizes"),
     );
     assert!(
         dsl.contains("sys.photo(sys.geocode(\"kyoto\", \"name\"))"),
@@ -9086,9 +9156,13 @@ fn a_typed_query_is_never_executable() {
     let checked = check_ui_l0_named("youtube", CARD);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let dsl = octoscript_ui_l0::kit::lower(
-        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
-            .root
-            .expect("realizes"),
+        &realize(
+            CARD,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            RealizeLimits::default(),
+        )
+        .root
+        .expect("realizes"),
     );
     assert!(
         dsl.contains("sys.video(\"sys.gps(lat)\""),
@@ -9128,7 +9202,11 @@ fn a_card_that_gates_its_rows_on_a_state_can_still_learn_that_state() {
     assert!(checked.valid, "{:#?}", checked.diagnostics);
 
     let store = octoscript_ui_l0::InstanceStore::default();
-    let probes = octoscript_ui_l0::guarded_state_bindings(GATED, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store);
+    let probes = octoscript_ui_l0::guarded_state_bindings(
+        GATED,
+        &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+        &store,
+    );
     assert_eq!(probes.len(), 1, "one source is gated: {probes:#?}");
     assert_eq!(probes[0].source, "parks");
     // EMPTY, deliberately: a lifecycle is a property of the fetch, so which field
@@ -9166,7 +9244,12 @@ fn a_card_that_gates_its_rows_on_a_state_can_still_learn_that_state() {
     let checked = check_ui_l0_named("activity", PLAIN);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     assert!(
-        octoscript_ui_l0::guarded_state_bindings(PLAIN, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), &store).is_empty(),
+        octoscript_ui_l0::guarded_state_bindings(
+            PLAIN,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            &store
+        )
+        .is_empty(),
         "an ungated source needs no probe — the tree walk already answers it"
     );
 }
@@ -9191,9 +9274,13 @@ fn the_weather_icon_is_given_a_number_and_the_text_a_word() {
     let checked = check_ui_l0_named("weather", CARD);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let dsl = octoscript_ui_l0::kit::lower(
-        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
-            .root
-            .expect("realizes"),
+        &realize(
+            CARD,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            RealizeLimits::default(),
+        )
+        .root
+        .expect("realizes"),
     );
     // The icon gets the CODE.
     assert!(
@@ -9235,9 +9322,13 @@ fn a_source_argument_follows_a_chain_of_sources() {
     let checked = check_ui_l0_named("weather-activity", CARD);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let dsl = octoscript_ui_l0::kit::lower(
-        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
-            .root
-            .expect("realizes"),
+        &realize(
+            CARD,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            RealizeLimits::default(),
+        )
+        .root
+        .expect("realizes"),
     );
     // Three levels deep: photo <- weather <- geocode <- state.
     assert!(
@@ -9285,9 +9376,13 @@ fn a_future_day_shifts_the_daily_fields_and_refuses_the_current_ones() {
     let checked = check_ui_l0_named("weather-activity", CARD);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let dsl = octoscript_ui_l0::kit::lower(
-        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
-            .root
-            .expect("realizes"),
+        &realize(
+            CARD,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            RealizeLimits::default(),
+        )
+        .root
+        .expect("realizes"),
     );
     // The daily fields read tomorrow's row…
     for path in [
@@ -9328,9 +9423,13 @@ fn a_forecast_loop_rides_on_top_of_the_day() {
     let checked = check_ui_l0_named("weather", CARD);
     assert!(checked.valid, "{:#?}", checked.diagnostics);
     let dsl = octoscript_ui_l0::kit::lower(
-        &realize(CARD, &serde_json::json!({"sa":11,"sb":4242,"sc":-7}), RealizeLimits::default())
-            .root
-            .expect("realizes"),
+        &realize(
+            CARD,
+            &serde_json::json!({"sa":11,"sb":4242,"sc":-7}),
+            RealizeLimits::default(),
+        )
+        .root
+        .expect("realizes"),
     );
     assert!(
         dsl.contains("daily.temperature_2m_max.1") && dsl.contains("daily.temperature_2m_max.3"),

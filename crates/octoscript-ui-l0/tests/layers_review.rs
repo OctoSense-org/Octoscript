@@ -1,6 +1,6 @@
 //! Regressions for the completed L0–L3 boundary review.
-use serde_json::json;
 use octoscript_ui_l0::*;
+use serde_json::json;
 
 fn card(expr: &str) -> String {
     format!("# level: L1\nsource q sys.quote(ticker: \"N\", fields: [last, open])\nview root Surface {{ TextHero(value: {expr}) }}")

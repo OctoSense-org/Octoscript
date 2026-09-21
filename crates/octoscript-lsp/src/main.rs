@@ -1122,7 +1122,9 @@ impl OctoscriptLanguageServer {
             .get(uri)
             .ok_or_else(|| "the document is not open in this Octoscript session".to_owned())?;
         let source = state.source.as_deref().ok_or_else(|| {
-            format!("the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit")
+            format!(
+                "the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit"
+            )
         })?;
         let formatted = format_source_named(uri.as_str(), source, ExecutionLimits::default())
             .map_err(|error| format!("cannot format canonical Octoscript source: {error}"))?;
@@ -1143,7 +1145,9 @@ impl OctoscriptLanguageServer {
             .get(uri)
             .ok_or_else(|| "the document is not open in this Octoscript session".to_owned())?;
         let source = state.source.as_deref().ok_or_else(|| {
-            format!("the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit")
+            format!(
+                "the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit"
+            )
         })?;
         let declarations =
             top_level_declarations_named(uri.as_str(), source, ExecutionLimits::default())
@@ -1876,7 +1880,8 @@ impl OctoscriptLanguageServer {
         }
         if !is_canonical_identifier(new_name) {
             return Err(
-                "the requested name is not a non-reserved canonical Octoscript identifier".to_owned(),
+                "the requested name is not a non-reserved canonical Octoscript identifier"
+                    .to_owned(),
             );
         }
 
@@ -1884,7 +1889,9 @@ impl OctoscriptLanguageServer {
         let syntax = check_syntax_named(uri.as_str(), &renamed_source, ExecutionLimits::default())
             .map_err(|error| format!("cannot validate renamed Octoscript source: {error}"))?;
         if !syntax.valid {
-            return Err("the requested rename does not produce canonical Octoscript source".to_owned());
+            return Err(
+                "the requested rename does not produce canonical Octoscript source".to_owned(),
+            );
         }
 
         let renamed_report =
@@ -1918,7 +1925,9 @@ impl OctoscriptLanguageServer {
             .get(uri)
             .ok_or_else(|| "the document is not open in this Octoscript session".to_owned())?;
         let source = state.source.as_deref().ok_or_else(|| {
-            format!("the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit")
+            format!(
+                "the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit"
+            )
         })?;
         let report = state.lexical_report.get_or_init(|| {
             lexical_symbol_report_named(uri.as_str(), source, ExecutionLimits::default())
@@ -1936,7 +1945,9 @@ impl OctoscriptLanguageServer {
             .get(uri)
             .ok_or_else(|| "the document is not open in this Octoscript session".to_owned())?;
         let source = state.source.as_deref().ok_or_else(|| {
-            format!("the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit")
+            format!(
+                "the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit"
+            )
         })?;
         let report = state.completion_report.get_or_init(|| {
             lexical_completion_report_named(uri.as_str(), source, ExecutionLimits::default())
@@ -1954,7 +1965,9 @@ impl OctoscriptLanguageServer {
             .get(uri)
             .ok_or_else(|| "the document is not open in this Octoscript session".to_owned())?;
         let source = state.source.as_deref().ok_or_else(|| {
-            format!("the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit")
+            format!(
+                "the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit"
+            )
         })?;
         let report = state.module_import_report.get_or_init(|| {
             module_import_report_named(uri.as_str(), source, ExecutionLimits::default())
@@ -1972,7 +1985,9 @@ impl OctoscriptLanguageServer {
             .get(uri)
             .ok_or_else(|| "the document is not open in this Octoscript session".to_owned())?;
         let source = state.source.as_deref().ok_or_else(|| {
-            format!("the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit")
+            format!(
+                "the document exceeds Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit"
+            )
         })?;
         let report = state.static_record_shape_report.get_or_init(|| {
             static_record_shape_report_named(uri.as_str(), source, ExecutionLimits::default())
@@ -2459,7 +2474,11 @@ fn fuzz_exercise_advisory_input_field_requests(
 }
 
 #[cfg(fuzzing)]
-fn fuzz_exercise_named_function_requests(server: &OctoscriptLanguageServer, uri: &Uri, source: &str) {
+fn fuzz_exercise_named_function_requests(
+    server: &OctoscriptLanguageServer,
+    uri: &Uri,
+    source: &str,
+) {
     let Some(declaration_start) = source.find("fn summarize") else {
         return;
     };
@@ -8728,7 +8747,9 @@ fn rewrite_symbol_occurrences(
     let rewritten_len = removed_bytes
         .and_then(|removed| source.len().checked_sub(removed))
         .and_then(|retained| replacement_bytes.and_then(|added| retained.checked_add(added)))
-        .ok_or_else(|| "the requested rename exceeds Octoscript's source-size arithmetic".to_owned())?;
+        .ok_or_else(|| {
+            "the requested rename exceeds Octoscript's source-size arithmetic".to_owned()
+        })?;
     if rewritten_len > DEFAULT_MAX_SOURCE_BYTES {
         return Err(format!(
             "the renamed document would exceed Octoscript's {DEFAULT_MAX_SOURCE_BYTES}-byte source limit"
@@ -8989,7 +9010,12 @@ mod tests {
     }
 
     fn document(version: i32, text: &str) -> TextDocumentItem {
-        TextDocumentItem::new(test_uri(), "octoscript".to_owned(), version, text.to_owned())
+        TextDocumentItem::new(
+            test_uri(),
+            "octoscript".to_owned(),
+            version,
+            text.to_owned(),
+        )
     }
 
     fn tool_catalog(value: serde_json::Value) -> ToolCompletionCatalog {
@@ -12358,7 +12384,8 @@ mod tests {
         }
 
         let input_source = "workflow.input.le";
-        let mut input_server = OctoscriptLanguageServer::with_workflow_data_catalog(catalog.clone());
+        let mut input_server =
+            OctoscriptLanguageServer::with_workflow_data_catalog(catalog.clone());
         input_server.open_document(document(1, input_source));
         let input_completion = input_server
             .completion(
@@ -12486,10 +12513,11 @@ mod tests {
         assert_eq!(step_context.completed_output_count, 1);
 
         let outputs_source = "workflow.outputs.";
-        let mut outputs_server = OctoscriptLanguageServer::with_workflow_data_catalog_and_step_context(
-            catalog.clone(),
-            step_context.clone(),
-        );
+        let mut outputs_server =
+            OctoscriptLanguageServer::with_workflow_data_catalog_and_step_context(
+                catalog.clone(),
+                step_context.clone(),
+            );
         outputs_server.open_document(document(1, outputs_source));
         let outputs_completion = outputs_server
             .completion(
@@ -12576,10 +12604,11 @@ mod tests {
             .is_empty());
 
         let hover_source = "workflow.outputs.prepare.total\nworkflow.outputs.calculate.sum";
-        let mut hover_server = OctoscriptLanguageServer::with_workflow_data_catalog_and_step_context(
-            catalog,
-            step_context,
-        );
+        let mut hover_server =
+            OctoscriptLanguageServer::with_workflow_data_catalog_and_step_context(
+                catalog,
+                step_context,
+            );
         hover_server.open_document(document(1, hover_source));
         let completed_member = hover_source.find("total").expect("completed member exists");
         let completed_hover = hover_server
@@ -12804,10 +12833,11 @@ mod tests {
         assert!(invalid_catalog.unavailable);
         assert!(invalid_context.unavailable);
         let source = "workflow.outputs.";
-        let mut invalid_server = OctoscriptLanguageServer::with_workflow_data_catalog_and_step_context(
-            invalid_catalog,
-            invalid_context,
-        );
+        let mut invalid_server =
+            OctoscriptLanguageServer::with_workflow_data_catalog_and_step_context(
+                invalid_catalog,
+                invalid_context,
+            );
         invalid_server.open_document(document(1, source));
         let completion = invalid_server
             .completion(&test_uri(), position_at_byte(source, source.len()))
@@ -17353,7 +17383,8 @@ mod tests {
             );
         }
 
-        let other_uri = Uri::from_str("file:///workspace/other.octoscript").expect("valid file URI");
+        let other_uri =
+            Uri::from_str("file:///workspace/other.octoscript").expect("valid file URI");
         let other_source = "let index = 9\nindex";
         server.open_document(TextDocumentItem::new(
             other_uri.clone(),

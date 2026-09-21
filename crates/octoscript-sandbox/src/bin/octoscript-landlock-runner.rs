@@ -36,11 +36,11 @@ mod linux {
         AccessFs, CompatLevel, Compatible, PathBeneath, Ruleset, RulesetAttr, RulesetCreatedAttr,
         RulesetStatus,
     };
-    use rustix::fs::{fstat, open, FileType, Mode, OFlags};
     use octoscript_linux_seccomp::{
         install_filter, validate_filter, SeccompInstallError, ValidatedFilter,
         FILTER_INSTRUCTION_BYTES, MAX_FILTER_INSTRUCTIONS,
     };
+    use rustix::fs::{fstat, open, FileType, Mode, OFlags};
 
     const EXIT_USAGE: i32 = 64;
     const EXIT_LANDLOCK: i32 = 125;
@@ -437,7 +437,10 @@ mod linux {
                 ])
             );
             assert!(configuration.staged_seccomp_filter.is_none());
-            assert_eq!(configuration.command, Path::new("/opt/octoscript/limit-runner"));
+            assert_eq!(
+                configuration.command,
+                Path::new("/opt/octoscript/limit-runner")
+            );
             assert_eq!(
                 configuration.arguments,
                 arguments(&["--open-files", "16", "--", "/opt/octoscript/worker"])

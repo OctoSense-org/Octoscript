@@ -16,11 +16,11 @@
 
 use std::num::NonZeroUsize;
 
-use serde::{de::DeserializeOwned, Serialize};
 use octoscript_core::{
     vm::ScriptValue, Evaluation, ExecutionLimits, RuntimeError, DEFAULT_MAX_JSON_DATA_BYTES,
     DEFAULT_MAX_JSON_DATA_DEPTH,
 };
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     fixed_file_catalog::FixedFileCatalog, CapabilityCatalogLimits, CapabilityModule,

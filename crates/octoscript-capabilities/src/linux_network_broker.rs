@@ -19,8 +19,8 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use serde::{Deserialize, Serialize};
 use octoscript_protocol::{CapabilityGrant, NetworkOriginAccess, ResourceKind};
+use serde::{Deserialize, Serialize};
 
 use crate::http_endpoint_catalog::{
     HttpEndpointCatalog, HttpEndpointCatalogError, HttpEndpointSecretResolver, HttpOriginCatalog,
@@ -753,8 +753,8 @@ mod tests {
     use std::sync::mpsc;
     use std::thread;
 
-    use serde_json::json;
     use octoscript_protocol::{CapabilityManifest, ResourceSelector};
+    use serde_json::json;
 
     use super::*;
     use crate::http_endpoint_catalog::{

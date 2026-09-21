@@ -1,6 +1,6 @@
 //! Reproductions from the September 2026 language review (#9–#18).
-use serde_json::{json, Value};
 use octoscript_core::{ExecutionLimits, Runtime, RuntimeError, RuntimeJsonError};
+use serde_json::{json, Value};
 
 fn evaluate(source: &str) -> Value {
     let mut runtime = Runtime::default();

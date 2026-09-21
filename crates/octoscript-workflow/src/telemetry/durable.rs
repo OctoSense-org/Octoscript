@@ -9,13 +9,13 @@ use std::collections::{BTreeMap, VecDeque};
 use std::fmt::{self, Display, Formatter};
 use std::num::NonZeroUsize;
 
-use serde::{Deserialize, Serialize};
 use octoscript_capabilities::{
     AuditEvent, AuditEventBatch, AuditEventValidationError, AuditOutcome, RetryClass,
 };
 use octoscript_storage::{
     AuthenticatedStore, AuthenticatedStoreError, RollbackProtectedStore, StorageRecordKey,
 };
+use serde::{Deserialize, Serialize};
 
 use super::{
     CrossStreamTelemetryBatch, CrossStreamTelemetryCursorError, CrossStreamTelemetryEvent,

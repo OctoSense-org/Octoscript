@@ -3,7 +3,9 @@
 use std::time::Duration;
 
 use libfuzzer_sys::fuzz_target;
-use octoscript_core::{check_syntax_named, ExecutionLimits, Runtime, DEFAULT_MAX_SCRIPT_HEAP_BYTES};
+use octoscript_core::{
+    check_syntax_named, ExecutionLimits, Runtime, DEFAULT_MAX_SCRIPT_HEAP_BYTES,
+};
 
 const MAX_FUZZ_SOURCE_BYTES: usize = 8 * 1024;
 const MAX_FUZZ_SYNTAX_TOKENS: usize = 1_024;

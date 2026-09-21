@@ -10,7 +10,9 @@ fn main() {
     let data = if data_path.exists() {
         serde_json::from_str(&std::fs::read_to_string(data_path).expect("read fixture data"))
             .expect("valid fixture JSON")
-    } else { serde_json::json!({}) };
+    } else {
+        serde_json::json!({})
+    };
     let report = realize(&src, &data, RealizeLimits::default());
     let msgs: Vec<String> = report
         .diagnostics
@@ -23,5 +25,7 @@ fn main() {
         serde_json::json!({"ok": ok, "root": report.root.is_some(), "diagnostics": msgs,
             "state_initials": octoscript_ui_l0::state_initials(&src)})
     );
-    if !ok { std::process::exit(1); }
+    if !ok {
+        std::process::exit(1);
+    }
 }

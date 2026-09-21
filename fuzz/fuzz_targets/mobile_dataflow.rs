@@ -3,9 +3,9 @@
 use std::time::Duration;
 
 use libfuzzer_sys::fuzz_target;
-use serde_json::{Map, Value};
 use octoscript_capabilities::mobile::MobileRuntimeBuilder;
 use octoscript_core::{ExecutionLimits, DEFAULT_MAX_SCRIPT_HEAP_BYTES};
+use serde_json::{Map, Value};
 
 const MAX_FUZZ_CASE_BYTES: usize = 16 * 1024;
 const MAX_FUZZ_SOURCE_BYTES: usize = 8 * 1024;

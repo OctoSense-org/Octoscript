@@ -178,7 +178,10 @@ mod tests {
     use super::*;
     use crate::{WorkflowEvent, WorkflowStep};
 
-    fn suspended_engine() -> (WorkflowEngine, octoscript_capabilities::ExternalToolInvocation) {
+    fn suspended_engine() -> (
+        WorkflowEngine,
+        octoscript_capabilities::ExternalToolInvocation,
+    ) {
         let mut runtime = CapabilityRuntime::default();
         runtime
             .register_external_tool(ToolPolicy::new("work.run"))

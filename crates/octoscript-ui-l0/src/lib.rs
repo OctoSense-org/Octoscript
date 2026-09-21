@@ -3656,7 +3656,10 @@ pub mod catalog {
         ("sys.moonphase", &["lat", "lon"]),
         ("sys.photo", &["query", "cond"]),
         ("sys.locale", &[]),
-        ("sys.convert", &["amount", "from", "to", "direction", "fields"]),
+        (
+            "sys.convert",
+            &["amount", "from", "to", "direction", "fields"],
+        ),
         ("sys.gps", &[]),
         ("sys.search", &["query", "count", "fields"]),
         // COORDINATES, not places. A route needs four numbers and an argument
@@ -3814,11 +3817,39 @@ pub mod catalog {
             "sys.news",
             &["id", "title", "author", "points", "comments", "url"],
         ),
-        ("sys.news_digest", &["id", "title", "summary", "publisher", "url", "published_at"]),
-        ("sys.dataset", &["title", "subtitle", "summary", "coverage", "status", "as_of",
-            "metric1_label", "metric1_value", "metric2_label", "metric2_value",
-            "pick1_title", "pick1_body", "pick1_source", "url1", "pick2_title", "pick2_body", "pick2_source", "url2",
-            "pick3_title", "pick3_body", "pick3_source", "url3", "evidence_title", "evidence_body"]),
+        (
+            "sys.news_digest",
+            &["id", "title", "summary", "publisher", "url", "published_at"],
+        ),
+        (
+            "sys.dataset",
+            &[
+                "title",
+                "subtitle",
+                "summary",
+                "coverage",
+                "status",
+                "as_of",
+                "metric1_label",
+                "metric1_value",
+                "metric2_label",
+                "metric2_value",
+                "pick1_title",
+                "pick1_body",
+                "pick1_source",
+                "url1",
+                "pick2_title",
+                "pick2_body",
+                "pick2_source",
+                "url2",
+                "pick3_title",
+                "pick3_body",
+                "pick3_source",
+                "url3",
+                "evidence_title",
+                "evidence_body",
+            ],
+        ),
         ("sys.news_status", &["status", "message", "count"]),
         (
             "sys.quakes",
@@ -3905,7 +3936,17 @@ pub mod catalog {
         (
             "sys.cities",
             &[
-                "name", "lat", "lon", "temp", "feels", "feels_delta", "hi", "lo", "cond", "humidity", "wind",
+                "name",
+                "lat",
+                "lon",
+                "temp",
+                "feels",
+                "feels_delta",
+                "hi",
+                "lo",
+                "cond",
+                "humidity",
+                "wind",
             ],
         ),
     ];
@@ -7540,8 +7581,14 @@ pub mod makepad {
                 let from = text("from")?;
                 let to = text("to")?;
                 let direction = text("direction").unwrap_or_else(|| "\"fwd\"".into());
-                let field = if binding.field == "amount" { ", \"amount\"" } else { "" };
-                Some(format!("sys.convert({amount}, {from}, {to}, {direction}{field})"))
+                let field = if binding.field == "amount" {
+                    ", \"amount\""
+                } else {
+                    ""
+                };
+                Some(format!(
+                    "sys.convert({amount}, {from}, {to}, {direction}{field})"
+                ))
             }
             // THE FOUR THAT ANSWERED NOTHING. Each is in the catalog, so a card may
             // declare it and the checker accepts it — and each fell through to
@@ -7760,19 +7807,30 @@ pub mod makepad {
             }
             "sys.dataset" => {
                 let id = text("id")?;
-                if !crate::catalog::answers("sys.dataset")?.contains(&binding.field.as_str()) { return None; }
+                if !crate::catalog::answers("sys.dataset")?.contains(&binding.field.as_str()) {
+                    return None;
+                }
                 Some(format!("sys.dataset({id}, {:?})", binding.field))
             }
             "sys.news_digest" | "sys.news_status" => {
                 let query = text("query")?;
                 let language = text("language").unwrap_or_else(|| "\"en\"".into());
                 let field = if binding.helper == "sys.news_status" {
-                    if !matches!(binding.field.as_str(), "status" | "message" | "count") { return None; }
+                    if !matches!(binding.field.as_str(), "status" | "message" | "count") {
+                        return None;
+                    }
                     binding.field.clone()
                 } else {
                     let (row, field) = binding.field.split_once('.')?;
                     let row: usize = row.parse().ok()?;
-                    if row >= 3 || !matches!(field, "id" | "title" | "summary" | "publisher" | "url" | "published_at") { return None; }
+                    if row >= 3
+                        || !matches!(
+                            field,
+                            "id" | "title" | "summary" | "publisher" | "url" | "published_at"
+                        )
+                    {
+                        return None;
+                    }
                     format!("items.{row}.{field}")
                 };
                 Some(format!("sys.news_digest({query}, {language}, {field:?})"))
@@ -8130,8 +8188,8 @@ pub mod makepad {
                 let (index, field) = binding.field.split_once('.')?;
                 index.parse::<u32>().ok()?;
                 let key = match field {
-                    f @ ("name" | "lat" | "lon" | "temp" | "feels" | "feels_delta" | "hi" | "lo" | "cond"
-                    | "humidity" | "wind") => f,
+                    f @ ("name" | "lat" | "lon" | "temp" | "feels" | "feels_delta" | "hi"
+                    | "lo" | "cond" | "humidity" | "wind") => f,
                     _ => return None,
                 };
                 Some(match text("unit") {
@@ -11977,7 +12035,12 @@ pub mod kit {
                 // A ticker is text even when it comes from a live source.
                 // Numeric coercion turned a mover's "BLTE" into a missing
                 // symbol, while literal state-selected tickers still worked.
-                let _ = write!(out, "{f}({}, {})", scalar_of(node, "symbol"), scalar_of(node, "range"));
+                let _ = write!(
+                    out,
+                    "{f}({}, {})",
+                    scalar_of(node, "symbol"),
+                    scalar_of(node, "range")
+                );
             }
             "TempBar" | "SunArc" | "MoonPhase" | "AqiContour" | "Satellite" => {
                 let params: &[&str] = match node.kind.as_str() {

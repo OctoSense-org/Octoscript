@@ -27,7 +27,6 @@ use std::process::{Command, ExitCode};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use serde_json::{json, Value};
 use octoscript_capabilities::{
     http_endpoint_catalog::{HttpEndpointMethod, HttpOrigin, HttpOriginCatalog},
     CapabilityLeaseGrant, JsonToolContract, JsonToolRequest, ToolDescriptor, ToolError,
@@ -38,6 +37,7 @@ use octoscript_workflow::{
     mobile::{MobileWorkflowBuilder, MobileWorkflowRuntime},
     WorkflowData, WorkflowDraft, WorkflowPlan, WorkflowStepCapabilityPolicy,
 };
+use serde_json::{json, Value};
 
 /// Opaque-handle -> host-chosen file path. Shared by both adapters so a
 /// generated image can feed a transcode WITHOUT the script ever seeing a path.
@@ -70,7 +70,8 @@ fn run() -> Result<bool, String> {
         .collect::<Result<Vec<_>, _>>()?;
 
     let dir = PathBuf::from(
-        std::env::var("OCTOSCRIPT_MEDIA_DIR").unwrap_or_else(|_| "/tmp/octoscript-media".to_owned()),
+        std::env::var("OCTOSCRIPT_MEDIA_DIR")
+            .unwrap_or_else(|_| "/tmp/octoscript-media".to_owned()),
     );
 
     // (2a) The check gate: preflight every generated step through the canonical
@@ -195,9 +196,11 @@ fn build_runtime(dir: PathBuf) -> Result<MobileWorkflowRuntime, String> {
         hard_timeout: std::time::Duration::from_secs(120),
         ..ExecutionLimits::default()
     };
-    let mut builder =
-        MobileWorkflowBuilder::with_limits(limits, octoscript_capabilities::DEFAULT_MAX_PENDING_TOOLS)
-            .map_err(|error| error.to_string())?;
+    let mut builder = MobileWorkflowBuilder::with_limits(
+        limits,
+        octoscript_capabilities::DEFAULT_MAX_PENDING_TOOLS,
+    )
+    .map_err(|error| error.to_string())?;
 
     {
         let registry = registry.clone();

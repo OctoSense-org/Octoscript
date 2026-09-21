@@ -5538,7 +5538,8 @@ mod tests {
             max_syntax_tokens: 6,
             ..ExecutionLimits::default()
         };
-        let report = check_syntax_named("boundary.octoscript", "let value = 1\nvalue", limits).unwrap();
+        let report =
+            check_syntax_named("boundary.octoscript", "let value = 1\nvalue", limits).unwrap();
 
         assert!(report.valid, "{:?}", report.diagnostics);
     }
@@ -5677,7 +5678,8 @@ mod tests {
             ..ExecutionLimits::default()
         };
         let accepted =
-            check_vm_compatibility_named("legacy.octoscript", "var value = (((42)))", limits).unwrap();
+            check_vm_compatibility_named("legacy.octoscript", "var value = (((42)))", limits)
+                .unwrap();
         assert!(accepted.valid, "{:?}", accepted.diagnostics);
 
         let rejected =
@@ -6872,17 +6874,24 @@ compute(outer, 2)
     fn canonical_profile_rejects_bare_carriage_returns_before_vm_preflight() {
         let source = "true\r[]";
 
-        let canonical =
-            check_syntax_named("line-endings.octoscript", source, ExecutionLimits::default()).unwrap();
+        let canonical = check_syntax_named(
+            "line-endings.octoscript",
+            source,
+            ExecutionLimits::default(),
+        )
+        .unwrap();
         assert!(!canonical.valid);
         assert_eq!(canonical.diagnostics.len(), 1);
         assert!(canonical.diagnostics[0]
             .message
             .contains("bare carriage returns are not supported"));
 
-        let compatibility =
-            check_vm_compatibility_named("line-endings.octoscript", source, ExecutionLimits::default())
-                .unwrap();
+        let compatibility = check_vm_compatibility_named(
+            "line-endings.octoscript",
+            source,
+            ExecutionLimits::default(),
+        )
+        .unwrap();
         assert!(!compatibility.valid);
     }
 
@@ -6905,8 +6914,12 @@ compute(outer, 2)
     #[test]
     fn canonical_profile_rejects_adjacent_numeric_field_access() {
         let source = "(5.ci)";
-        let profile =
-            check_syntax_named("numeric-field.octoscript", source, ExecutionLimits::default()).unwrap();
+        let profile = check_syntax_named(
+            "numeric-field.octoscript",
+            source,
+            ExecutionLimits::default(),
+        )
+        .unwrap();
         let compatibility = check_vm_compatibility_named(
             "numeric-field.octoscript",
             source,
@@ -7199,7 +7212,8 @@ compute(outer, 2)
         let accepted = check_syntax_named("nesting.octoscript", "let value = (0)", limits).unwrap();
         assert!(accepted.valid, "{:?}", accepted.diagnostics);
 
-        let rejected = check_syntax_named("nesting.octoscript", "let value = ((0))", limits).unwrap();
+        let rejected =
+            check_syntax_named("nesting.octoscript", "let value = ((0))", limits).unwrap();
         assert!(!rejected.valid);
         assert!(rejected.diagnostics.iter().any(|diagnostic| {
             diagnostic
@@ -9560,7 +9574,9 @@ compute(outer, 2)
     fn preserves_the_llm_workflow_language_fixture() {
         let mut runtime = Runtime::default();
         let report = runtime
-            .eval(include_str!("../tests/fixtures/workflow_language.octoscript"))
+            .eval(include_str!(
+                "../tests/fixtures/workflow_language.octoscript"
+            ))
             .unwrap();
 
         assert!(report.succeeded(), "{:?}", report.diagnostics);

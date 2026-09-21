@@ -17,9 +17,9 @@ use std::io::Read;
 use std::str::FromStr;
 use std::time::Duration;
 
-use serde_json::json;
 #[cfg(all(feature = "linux-network-broker", target_os = "linux"))]
 use octoscript_protocol::NetworkOriginAccess;
+use serde_json::json;
 use ureq::{
     http::{
         header::{HeaderName, HeaderValue},
