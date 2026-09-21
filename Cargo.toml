@@ -40,3 +40,12 @@ rust-version = "1.85"
 [workspace.lints.rust]
 unsafe_code = "forbid"
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
+
+# makepad's own workspace carries this and we build the same crate, so without
+# it `cargo test -p makepad-script` differs from upstream's. makepad-stitch is a
+# WebAssembly interpreter; unoptimised its frames are large enough that one
+# chunk of a batched math expression (5461 points for a vec3) overflows a test
+# thread's stack, and math_aot's batch test aborts. Raising the stack does not
+# help, because the depth follows the point count.
+[profile.test.package.makepad-stitch]
+opt-level = 1
