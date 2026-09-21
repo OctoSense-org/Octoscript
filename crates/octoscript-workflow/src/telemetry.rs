@@ -11,8 +11,8 @@ use std::fmt::{self, Display, Formatter};
 use std::num::NonZeroUsize;
 use std::ops::Index;
 
-use serde::{Deserialize, Serialize};
 use octoscript_capabilities::{AuditEvent, AuditEventBatch};
+use serde::{Deserialize, Serialize};
 
 use crate::{WorkflowEvent, WorkflowEventBatch};
 

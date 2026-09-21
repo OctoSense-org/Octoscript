@@ -42,8 +42,6 @@ use std::num::NonZeroUsize;
 use std::ops::Index;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use serde::de::{self, SeqAccess, Visitor};
-use serde::{Deserialize, Serialize};
 use octoscript_capabilities::{
     CapabilityLease, CapabilityLeaseError, CapabilityLeaseEvaluationError, CapabilityLeaseGrant,
     CapabilityRuntime, ExternalToolCancellationRequest, ExternalToolError, ExternalToolId,
@@ -61,6 +59,8 @@ use octoscript_protocol::{
     ProtocolError, SessionAuthenticator, SessionRole, ToolPayload, WorkerMessage,
 };
 use octoscript_schema::{JsonSchema, SchemaViolation};
+use serde::de::{self, SeqAccess, Visitor};
+use serde::{Deserialize, Serialize};
 
 static NEXT_ENGINE_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -7697,7 +7697,10 @@ mod tests {
             schema["x-octoscript"]["source_profile"],
             serde_json::json!(CANONICAL_PROFILE_ID)
         );
-        assert_eq!(schema["x-octoscript"]["authority"], serde_json::json!("none"));
+        assert_eq!(
+            schema["x-octoscript"]["authority"],
+            serde_json::json!("none")
+        );
     }
 
     #[test]
@@ -8480,10 +8483,19 @@ mod tests {
         ));
         let audit = engine.runtime().audit();
         assert_eq!(audit.len(), 3);
-        assert_eq!(audit[0].outcome, octoscript_capabilities::AuditOutcome::Allowed);
-        assert_eq!(audit[1].outcome, octoscript_capabilities::AuditOutcome::Allowed);
+        assert_eq!(
+            audit[0].outcome,
+            octoscript_capabilities::AuditOutcome::Allowed
+        );
+        assert_eq!(
+            audit[1].outcome,
+            octoscript_capabilities::AuditOutcome::Allowed
+        );
         assert_eq!(audit[2].tool, "text.current");
-        assert_eq!(audit[2].outcome, octoscript_capabilities::AuditOutcome::Denied);
+        assert_eq!(
+            audit[2].outcome,
+            octoscript_capabilities::AuditOutcome::Denied
+        );
     }
 
     #[test]

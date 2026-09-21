@@ -32,15 +32,15 @@ use std::os::unix::net::UnixStream;
 use std::process::{ChildStderr, Command, Stdio};
 
 #[cfg(target_os = "linux")]
-use rustix::{
-    fs::{fstat, open, openat, FileType, Mode, OFlags},
-    io::{fcntl_dupfd_cloexec, fcntl_setfd, FdFlags},
-};
-#[cfg(target_os = "linux")]
 use octoscript_linux_project_quota::inspect_project_quota;
 use octoscript_protocol::{
     CapabilityManifest, NetworkOriginAccess, NetworkOriginAccessError, PrivatePipeWorkerBootstrap,
     PrivatePipeWorkerBootstrapError, ProtocolError, ResourceKind, ResourceSelector,
+};
+#[cfg(target_os = "linux")]
+use rustix::{
+    fs::{fstat, open, openat, FileType, Mode, OFlags},
+    io::{fcntl_dupfd_cloexec, fcntl_setfd, FdFlags},
 };
 
 const MAX_TMPFS_BYTES: usize = usize::MAX >> 1;
@@ -6141,7 +6141,8 @@ mod tests {
         fs::set_permissions(&socket, socket_permissions).unwrap();
         drop(listener);
 
-        LinuxNetworkBrokerMount::new(source, "/run/octoscript-network", "broker.sock", access).unwrap()
+        LinuxNetworkBrokerMount::new(source, "/run/octoscript-network", "broker.sock", access)
+            .unwrap()
     }
 
     fn argument_strings(plan: &BubblewrapCommand) -> Vec<String> {
@@ -7565,7 +7566,9 @@ print("seccomp-active")
         let root = TestDirectory::new();
         let mut policy = base_policy(&root);
         let mut runner = landlock_executable_runner(&root);
-        runner.add_allowed_executable("/opt/octoscript/worker").unwrap();
+        runner
+            .add_allowed_executable("/opt/octoscript/worker")
+            .unwrap();
         policy.set_landlock_executable_runner(runner);
         #[cfg(target_os = "linux")]
         assert!(matches!(
@@ -7690,7 +7693,10 @@ print("seccomp-active")
     #[test]
     fn resource_limit_configuration_rejects_empty_or_unbounded_values() {
         assert!(matches!(
-            ResourceLimitRunner::new("/opt/octoscript/limit-runner", WorkerResourceLimits::default()),
+            ResourceLimitRunner::new(
+                "/opt/octoscript/limit-runner",
+                WorkerResourceLimits::default()
+            ),
             Err(BubblewrapPolicyError::EmptyResourceLimits)
         ));
 
@@ -8314,9 +8320,11 @@ print("seccomp-active")
     #[test]
     fn active_file_root_limit_bounds_union_before_source_resolution() {
         let root = TestDirectory::new();
-        let mut policy =
-            BubblewrapWorkerPolicy::new(root.path().join("missing-bwrap"), "/opt/octoscript/worker")
-                .unwrap();
+        let mut policy = BubblewrapWorkerPolicy::new(
+            root.path().join("missing-bwrap"),
+            "/opt/octoscript/worker",
+        )
+        .unwrap();
         let mut ids = Vec::new();
         for index in 0..=DEFAULT_MAX_BUBBLEWRAP_ACTIVE_FILE_ROOTS {
             let id = format!("scratch-{index}");

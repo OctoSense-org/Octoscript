@@ -14,7 +14,6 @@
 
 use std::num::NonZeroUsize;
 
-use serde::{de::DeserializeOwned, Serialize};
 use octoscript_capabilities::{
     fixed_file_catalog::FixedFileCatalog, AuditEventBatch, AuditEventCursorError, AuditLog,
     CapabilityCatalogLimits, CapabilityModule, CapabilityModuleCallHintReport,
@@ -23,6 +22,7 @@ use octoscript_capabilities::{
     ToolError, ToolMetadata, ToolPolicy, ToolRegistrationError, ToolRequest,
 };
 use octoscript_core::{ExecutionLimits, RuntimeError};
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     Approval, WorkflowCheckpoint, WorkflowData, WorkflowDataContract, WorkflowDraft,
@@ -272,7 +272,8 @@ impl MobileWorkflowBuilder {
         handler: F,
     ) -> Result<(), ToolRegistrationError>
     where
-        F: FnMut(&octoscript_capabilities::JsonToolRequest) -> Result<JsonValue, ToolError> + 'static,
+        F: FnMut(&octoscript_capabilities::JsonToolRequest) -> Result<JsonValue, ToolError>
+            + 'static,
     {
         self.runtime
             .register_validated_json_tool(policy, metadata, contract, handler)
@@ -1023,7 +1024,9 @@ mod tests {
                     path: "mod.arithmetic.add".to_owned(),
                     description: "Adds two reviewed integer fields.".to_owned(),
                     call_mode: Some(octoscript_capabilities::CapabilityModuleMethodMode::Deferred),
-                    call_shape: Some(octoscript_capabilities::CapabilityModuleCallShape::SingleJson),
+                    call_shape: Some(
+                        octoscript_capabilities::CapabilityModuleCallShape::SingleJson
+                    ),
                     input_fields: Some(vec![
                         octoscript_capabilities::CapabilityModuleInputFieldDescriptor {
                             name: "left".to_owned(),

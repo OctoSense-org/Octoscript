@@ -17,7 +17,6 @@ use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use serde::{de::DeserializeOwned, Serialize};
 use octoscript_protocol::{
     AuthenticatedWorkerMessage, CapabilityGrant, CapabilityManifest, OperationCompensationRequest,
     OperationCompensationResult, OperationDispatchRequest, OperationReconcileRequest,
@@ -29,6 +28,7 @@ use octoscript_storage::{
     AuthenticatedStore, AuthenticatedStoreError, FencedRollbackProtectedStore, StorageRecordKey,
     StorageRecordKeyError,
 };
+use serde::{de::DeserializeOwned, Serialize};
 
 /// Default maximum reconciliation requests one worker accepts for one tool in
 /// a session.

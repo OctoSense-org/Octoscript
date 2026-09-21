@@ -3561,11 +3561,11 @@ mod tests {
     use std::io::{self, Cursor, Read, Write};
 
     use super::*;
-    use serde_json::json;
     use octoscript_storage::{
         AuthenticatedStore, StorageKey, StorageKeyId, StorageKeyring, StorageRecordKey,
         VolatileMemoryStore, STORAGE_KEY_BYTES,
     };
+    use serde_json::json;
 
     fn json_grant() -> CapabilityGrant {
         let mut grant = CapabilityGrant::json("math.add");

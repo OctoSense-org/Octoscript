@@ -19,8 +19,8 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use serde::{Deserialize, Serialize};
 use octoscript_protocol::{CapabilityGrant, NetworkOriginAccess, ResourceKind};
+use serde::{Deserialize, Serialize};
 
 use crate::http_endpoint_catalog::{
     HttpEndpointCatalog, HttpEndpointCatalogError, HttpEndpointSecretResolver, HttpOriginCatalog,
@@ -753,8 +753,8 @@ mod tests {
     use std::sync::mpsc;
     use std::thread;
 
-    use serde_json::json;
     use octoscript_protocol::{CapabilityManifest, ResourceSelector};
+    use serde_json::json;
 
     use super::*;
     use crate::http_endpoint_catalog::{
@@ -766,8 +766,11 @@ mod tests {
     impl TestDirectory {
         fn new() -> Self {
             static NEXT: AtomicUsize = AtomicUsize::new(0);
+            // The broker appends `.octoscript-network-<32 hex>/broker.sock`, 64
+            // bytes, and a Unix socket path cannot reach SUN_LEN (108). The old
+            // name spent 48 bytes here and the bind failed on every run.
             let path = std::env::temp_dir().join(format!(
-                "octoscript-linux-network-broker-test-{}-{}",
+                "octoscript-nb-{}-{}",
                 std::process::id(),
                 NEXT.fetch_add(1, Ordering::Relaxed)
             ));

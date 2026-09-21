@@ -20,12 +20,24 @@ view root Surface {
     let checked = check_ui_l0_named("nav", card);
     assert!(checked.valid, "{:?}", checked.diagnostics);
     let report = realize(card, &serde_json::json!({}), RealizeLimits::default());
-    let lowered = kit::lower(&report.complete_root().unwrap());
+    let lowered = kit::lower(report.complete_root().unwrap());
     assert!(lowered.contains("sys.navprog("));
     assert!(lowered.contains("sys.navstep("));
     // Each live instruction asks navstep and navprog about the same waypoint;
     // map geometry needs it too. A direct-route progress value cannot be mixed
     // with a route through the stop.
-    assert!(lowered.matches("sys.searchnum(\"Apple Park\", 0, \"lat\")").count() >= 7, "{lowered}");
-    assert!(lowered.matches("sys.searchnum(\"Apple Park\", 0, \"lon\")").count() >= 7, "{lowered}");
+    assert!(
+        lowered
+            .matches("sys.searchnum(\"Apple Park\", 0, \"lat\")")
+            .count()
+            >= 7,
+        "{lowered}"
+    );
+    assert!(
+        lowered
+            .matches("sys.searchnum(\"Apple Park\", 0, \"lon\")")
+            .count()
+            >= 7,
+        "{lowered}"
+    );
 }

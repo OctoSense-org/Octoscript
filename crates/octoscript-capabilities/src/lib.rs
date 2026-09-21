@@ -21,8 +21,6 @@ use makepad_script::{
     LiveId, ScriptHandle, ScriptHandleGc, ScriptHandleType, ScriptIp, ScriptStringSink,
     ScriptThreadId, ScriptValue, NIL,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-pub use serde_json::{json, Value as JsonValue};
 use octoscript_core::{
     decode_bounded_script_json, encode_bounded_script_json, imported_module_call_hint_report_named,
     is_canonical_identifier, vm, Evaluation, ExecutionLimits, Runtime, RuntimeError,
@@ -40,6 +38,8 @@ pub use octoscript_protocol::{
 };
 use octoscript_protocol::{EnvelopeFormat, SessionAuthorizer};
 pub use octoscript_schema::{JsonSchema, SchemaError};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+pub use serde_json::{json, Value as JsonValue};
 
 /// Host-enforced deadline and termination wrapper for worker transports.
 ///

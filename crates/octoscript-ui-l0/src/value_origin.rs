@@ -81,13 +81,13 @@ impl ValueScope<'_> {
 }
 
 pub(super) fn initial_origin(state: &StateDecl, card: &Card) -> ValueOrigin {
-    if state.initial.is_none() && state.initial_path.is_some() {
+    if let (None, Some(path)) = (&state.initial, &state.initial_path) {
         ValueScope {
             frames: Vec::new(),
             data: &serde_json::Value::Null,
             copies: &card.copies,
         }
-        .path_origin(state.initial_path.as_ref().unwrap(), card)
+        .path_origin(path, card)
     } else if matches!(state.shape, Shape::Bool | Shape::Enum(_)) {
         ValueOrigin::Vocabulary
     } else {

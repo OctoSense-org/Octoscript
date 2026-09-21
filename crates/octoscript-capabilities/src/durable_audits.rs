@@ -10,10 +10,10 @@ use std::collections::VecDeque;
 use std::fmt::{self, Display, Formatter};
 use std::num::{NonZeroU64, NonZeroUsize};
 
-use serde::{Deserialize, Serialize};
 use octoscript_storage::{
     AuthenticatedStore, AuthenticatedStoreError, RollbackProtectedStore, StorageRecordKey,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{
     is_valid_tool_name, AuditEvent, AuditEventBatch, AuditEventValidationError, AuditOutcome,

@@ -396,7 +396,8 @@ mod tests {
     #[test]
     fn entries_reject_invalid_opaque_ids_and_credential_locators() {
         assert_eq!(
-            PlatformKeyringSecretEntry::new("bad/id", "com.example.octoscript", "release").unwrap_err(),
+            PlatformKeyringSecretEntry::new("bad/id", "com.example.octoscript", "release")
+                .unwrap_err(),
             PlatformKeyringSecretEntryError::InvalidSecretIdentifier
         );
         assert_eq!(
@@ -405,8 +406,12 @@ mod tests {
             PlatformKeyringSecretEntryError::InvalidService
         );
         assert_eq!(
-            PlatformKeyringSecretEntry::new("release.auth", "com.example.octoscript", "Release User")
-                .unwrap_err(),
+            PlatformKeyringSecretEntry::new(
+                "release.auth",
+                "com.example.octoscript",
+                "Release User"
+            )
+            .unwrap_err(),
             PlatformKeyringSecretEntryError::InvalidAccount
         );
     }

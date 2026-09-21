@@ -1,0 +1,80 @@
+# ledger live-news@1.0.0
+theme taskplan_light
+
+source stories sys.news_digest(query: state.query, language: state.language, count: 3,
+                               fields: [id, title, summary, publisher, url, published_at])
+source progress sys.news_status(query: state.query, language: state.language,
+                               fields: [status, message, count])
+source page sys.link(fields: [url])
+
+state query { shape: text, initial: "technology" }
+state draft { shape: text, initial: "" }
+state language { shape: text, initial: "en" }
+state editing { shape: enum[none, search], initial: .none }
+
+event edit_search { editing: set(.search), draft: clear }
+event typing { draft: set($value) }
+event search { query: set($value), editing: set(.none), draft: clear }
+event cancel { editing: set(.none), draft: clear }
+event translate { language: set($value) }
+event read_story { page: set($value) }
+
+copy title { class: vocabulary, en: "News" }
+copy coverage { class: vocabulary, en: "BBC · THE GUARDIAN" }
+copy search { class: vocabulary, en: "Search" }
+copy placeholder { class: vocabulary, en: "Search a person, place or topic" }
+copy cancel { class: vocabulary, en: "Cancel" }
+copy loading { class: vocabulary, en: "Finding articles and preparing your brief…" }
+copy failed { class: vocabulary, en: "News is unavailable. Try another search." }
+copy read { class: vocabulary, en: "Read article ↗" }
+copy english { class: vocabulary, en: "English" }
+copy chinese { class: vocabulary, en: "中文" }
+copy technology { class: vocabulary, en: "Tech" }
+copy world { class: vocabulary, en: "World" }
+copy business { class: vocabulary, en: "Business" }
+
+view root Surface(pad: .page) {
+  Col(gap: 14) {
+    Row(align: .center, gap: 12) {
+      TextTitle(text: copy.title, width: .fill)
+      Chip(text: copy.search, on_tap: edit_search)
+    }
+    TextCaption(text: copy.coverage)
+    when editing == .search {
+      Panel {
+        Col(gap: 10) {
+          Field(text: draft, placeholder: copy.placeholder, on_commit: search,
+                on_change: typing, width: .fill)
+          Row(gap: 10) {
+            Chip(text: copy.search, on_tap: search, value: draft)
+            Chip(text: copy.cancel, on_tap: cancel)
+          }
+        }
+      }
+    }
+    Row(gap: 8) {
+      Chip(text: copy.technology, on_tap: search, value: "technology")
+      Chip(text: copy.world, on_tap: search, value: "world")
+      Chip(text: copy.business, on_tap: search, value: "business")
+    }
+    Row(gap: 8) {
+      Chip(text: copy.english, on_tap: translate, value: "en")
+      Chip(text: copy.chinese, on_tap: translate, value: "zh-CN")
+    }
+    TextRow(text: query, width: .fill)
+    when progress.$state == .pending { TextBody(text: copy.loading) }
+    when progress.$state == .failed { TextBody(text: copy.failed) }
+    TextCaption(text: progress.message, width: .fill)
+    for story in stories key story.id {
+      Card {
+        Col(gap: 8) {
+          TextCaption(text: story.publisher)
+          TextRow(text: story.title, width: .fill)
+          TextBody(text: story.summary, width: .fill)
+          TextCaption(text: story.published_at)
+          Chip(text: copy.read, on_tap: read_story, value: story.url)
+        }
+      }
+    }
+  }
+}
