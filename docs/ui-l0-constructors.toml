@@ -522,6 +522,29 @@ answers = ["id", "mag", "place", "depth", "ago", "lat", "lon"]
 args = ["id", "fields"]
 answers = ["id", "title", "author", "points", "comments", "url"]
 
+[sources."sys.news_digest"]
+# A search-shaped news feed: `query` and `language` choose what is fetched,
+# where `sys.news` only pages a fixed feed. Row-shaped, so a card lists it with
+# a `for` over `id`.
+args = ["query", "language", "count", "fields"]
+answers = ["id", "title", "summary", "publisher", "url", "published_at"]
+
+[sources."sys.news_status"]
+# The state of the fetch behind `sys.news_digest`, for the same query. A digest
+# arrives after the card is already on screen, so without this a card has no
+# way to say whether it is waiting, empty or failed, and would render a blank
+# list either way.
+args = ["query", "language", "fields"]
+answers = ["status", "message", "count"]
+
+[sources."sys.dataset"]
+# One prepared research dataset, addressed by `id`. Flat rather than row-shaped:
+# the fields are the slots of a single briefing (a headline pair of metrics,
+# three picks with their sources, one evidence note), so a card reads them
+# directly instead of looping.
+args = ["id", "fields"]
+answers = ["title", "subtitle", "summary", "coverage", "status", "as_of", "metric1_label", "metric1_value", "metric2_label", "metric2_value", "pick1_title", "pick1_body", "pick1_source", "url1", "pick2_title", "pick2_body", "pick2_source", "url2", "pick3_title", "pick3_body", "pick3_source", "url3", "evidence_title", "evidence_body"]
+
 [sources."sys.movers"]
 # `symbols` names the universe to rank; omitted means the whole market. Without
 # it a themed request ("top AI movers") could only render market-wide gainers
