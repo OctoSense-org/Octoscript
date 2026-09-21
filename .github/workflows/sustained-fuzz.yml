@@ -11,7 +11,7 @@ permissions:
 jobs:
   parser-and-vm:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
@@ -73,7 +73,7 @@ jobs:
 
   authority-and-durability:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
