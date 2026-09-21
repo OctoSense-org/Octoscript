@@ -766,8 +766,11 @@ mod tests {
     impl TestDirectory {
         fn new() -> Self {
             static NEXT: AtomicUsize = AtomicUsize::new(0);
+            // The broker appends `.octoscript-network-<32 hex>/broker.sock`, 64
+            // bytes, and a Unix socket path cannot reach SUN_LEN (108). The old
+            // name spent 48 bytes here and the bind failed on every run.
             let path = std::env::temp_dir().join(format!(
-                "octoscript-linux-network-broker-test-{}-{}",
+                "octoscript-nb-{}-{}",
                 std::process::id(),
                 NEXT.fetch_add(1, Ordering::Relaxed)
             ));
