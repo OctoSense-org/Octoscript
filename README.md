@@ -1,5 +1,7 @@
 # Octoscript
 
+English | [简体中文](README.zh-CN.md)
+
 Octoscript is a capability-first scripting runtime for dynamic workflows, tool
 orchestration, and data transformation. It starts from the Makepad Octoscript VM
 and keeps UI support optional rather than making UI the language boundary.
